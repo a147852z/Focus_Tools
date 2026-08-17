@@ -1,0 +1,14 @@
+{
+  "name": "專注房間 Focus Room",
+  "short_name": "專注房間",
+  "description": "完成任務、累積專注，打造自己的療癒房間。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#eef3ef",
+  "theme_color": "#246e62",
+  "lang": "zh-Hant",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
