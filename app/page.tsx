@@ -1,11 +1,10 @@
 "use client";
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { furnitureCalibrationEvent, furnitureCalibrationStorageKey, type FurnitureCalibration } from "./furniture-calibration";
+import { defaultFurnitureCalibrations, furnitureCalibrationEvent, furnitureCalibrationStorageKey, mergeFurnitureCalibrations, type FurnitureCalibration, type FurnitureId } from "./furniture-calibration";
 
 type Screen = "today" | "calendar" | "focus" | "room" | "me";
 type Task = { id: number; title: string; date: string; minutes: number; category: string; done: boolean };
-type FurnitureId = "bed" | "desk" | "chair" | "lamp" | "plant" | "rug" | "bookshelf" | "cabinet";
 type FurnitureDefinition = { id: FurnitureId; name: string; src: string; className: string; price: number; footprintX: number; footprintY: number };
 type Inventory = Record<FurnitureId, number>;
 type PlacedFurniture = { uid: string; furnitureId: FurnitureId; rotation: number; gridX: number; gridY: number };
@@ -121,7 +120,7 @@ export default function Home() {
   const [roomZoom, setRoomZoom] = useState(1);
   const [inventory, setInventory] = useState<Inventory>(initialInventory);
   const [placedFurniture, setPlacedFurniture] = useState<PlacedFurniture[]>(initialPlacedFurniture);
-  const [furnitureCalibrations, setFurnitureCalibrations] = useState<Partial<Record<FurnitureId, FurnitureCalibration>>>({});
+  const [furnitureCalibrations, setFurnitureCalibrations] = useState<Partial<Record<FurnitureId, FurnitureCalibration>>>(defaultFurnitureCalibrations);
   const [selectedFurnitureUid, setSelectedFurnitureUid] = useState<string | null>("placed-bed");
   const [shopOpen, setShopOpen] = useState(false);
   const [toast, setToast] = useState("");
@@ -132,12 +131,12 @@ export default function Home() {
   useEffect(() => {
     const requestedScreen = new URLSearchParams(window.location.search).get("screen");
     if (requestedScreen && requestedScreen in screenNames) setScreen(requestedScreen as Screen);
-    let startupCalibrations: FurnitureCalibrationMap = {};
+    let startupCalibrations: FurnitureCalibrationMap = defaultFurnitureCalibrations;
     try {
       const savedCalibrations = localStorage.getItem(furnitureCalibrationStorageKey);
-      if (savedCalibrations) startupCalibrations = JSON.parse(savedCalibrations) as FurnitureCalibrationMap;
+      if (savedCalibrations) startupCalibrations = mergeFurnitureCalibrations(JSON.parse(savedCalibrations));
       setFurnitureCalibrations(startupCalibrations);
-    } catch { startupCalibrations = {}; }
+    } catch { startupCalibrations = defaultFurnitureCalibrations; }
     const saved = localStorage.getItem("focus-room-state");
     if (saved) {
       try {
@@ -179,9 +178,9 @@ export default function Home() {
     const loadCalibrations = () => {
       try {
         const saved = localStorage.getItem(furnitureCalibrationStorageKey);
-        setFurnitureCalibrations(saved ? JSON.parse(saved) as Partial<Record<FurnitureId, FurnitureCalibration>> : {});
+        setFurnitureCalibrations(saved ? mergeFurnitureCalibrations(JSON.parse(saved)) : defaultFurnitureCalibrations);
       } catch {
-        setFurnitureCalibrations({});
+        setFurnitureCalibrations(defaultFurnitureCalibrations);
       }
     };
     const timer = window.setTimeout(loadCalibrations, 0);

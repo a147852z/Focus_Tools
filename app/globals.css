@@ -101,3 +101,4 @@ button,input,select{font-family:inherit}button{touch-action:manipulation}
 .dev-stage.is-mobile .dev-room-floor,.dev-stage.is-mobile .dev-room-grid,.dev-stage.is-mobile .dev-furniture-layer{width:280px;height:162px}
 .dev-stage.is-mobile.size-7 .dev-room-floor,.dev-stage.is-mobile.size-7 .dev-room-grid,.dev-stage.is-mobile.size-7 .dev-furniture-layer{width:306px;height:178px}
 .dev-stage.is-mobile.size-8 .dev-room-floor,.dev-stage.is-mobile.size-8 .dev-room-grid,.dev-stage.is-mobile.size-8 .dev-furniture-layer{width:332px;height:194px}
+.dev-output-actions{display:grid;gap:8px}.dev-output-actions button{border:1px solid #9f826c;border-radius:9px;padding:10px 14px;background:var(--dev-paper);color:var(--dev-ink);font-size:11px;font-weight:800;white-space:nowrap;cursor:pointer}

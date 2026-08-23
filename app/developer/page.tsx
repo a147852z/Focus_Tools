@@ -5,9 +5,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { furnitureCalibrationEvent, furnitureCalibrationStorageKey, type FurnitureCalibration } from "../furniture-calibration";
+import { defaultFurnitureCalibrations, furnitureCalibrationEvent, furnitureCalibrationStorageKey, mergeFurnitureCalibrations, type FurnitureCalibration, type FurnitureId } from "../furniture-calibration";
 
-type FurnitureId = "bed" | "desk" | "chair" | "lamp" | "plant" | "rug" | "bookshelf" | "cabinet";
 type Calibration = FurnitureCalibration;
 
 type FurnitureAsset = Omit<Calibration, "imageAngle"> & {
@@ -43,8 +42,6 @@ const assets: FurnitureAsset[] = [
   { id: "cabinet", name: "矮櫃", src: "/assets/furniture/cabinet-grid-v3.png", width: 84, mobileWidth: 71, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 2, footprintY: 1 },
 ];
 
-const defaultCalibrations = Object.fromEntries(assets.map(({ id, width, mobileWidth, anchorX, anchorY, flipOriginX, flipOriginY, footprintX, footprintY }) => [id, { width, mobileWidth, anchorX, anchorY, flipOriginX, flipOriginY, imageAngle: 0, footprintX, footprintY }])) as Record<FurnitureId, Calibration>;
-
 function NumericControl({ label, value, min, max, step = 1, unit, onChange }: { label: string; value: number; min: number; max: number; step?: number; unit?: string; onChange: (value: number) => void }) {
   const commit = (raw: string) => {
     const parsed = Number(raw);
@@ -58,7 +55,7 @@ function NumericControl({ label, value, min, max, step = 1, unit, onChange }: { 
 
 export default function DeveloperPage() {
   const [selectedId, setSelectedId] = useState<FurnitureId>("bed");
-  const [calibrations, setCalibrations] = useState<Record<FurnitureId, Calibration>>(defaultCalibrations);
+  const [calibrations, setCalibrations] = useState<Record<FurnitureId, Calibration>>(defaultFurnitureCalibrations);
   const [gridSize, setGridSize] = useState(6);
   const [gridX, setGridX] = useState(0);
   const [gridY, setGridY] = useState(3);
@@ -93,7 +90,7 @@ export default function DeveloperPage() {
         const saved = window.localStorage.getItem(furnitureCalibrationStorageKey);
         if (saved) {
           const parsed = JSON.parse(saved) as Partial<Record<FurnitureId, Partial<Calibration>>>;
-          setCalibrations(Object.fromEntries(assets.map(({ id }) => [id, { ...defaultCalibrations[id], ...parsed[id] }])) as Record<FurnitureId, Calibration>);
+          setCalibrations(mergeFurnitureCalibrations(parsed));
         }
       } catch { /* Ignore invalid local developer data. */ }
     }, 0);
@@ -184,7 +181,7 @@ export default function DeveloperPage() {
   }
 
   function resetSelected() {
-    setCalibrations((current) => ({ ...current, [selectedId]: { ...defaultCalibrations[selectedId] } }));
+    setCalibrations((current) => ({ ...current, [selectedId]: { ...defaultFurnitureCalibrations[selectedId] } }));
     notify(`${asset.name}已恢復程式預設值`);
   }
 
@@ -268,7 +265,10 @@ export default function DeveloperPage() {
     <section className="dev-output">
       <div><span className="dev-kicker">GENERATED OUTPUT</span><h2>可直接套用的 CSS</h2><p>數值會依目前選取的家具即時更新；確認後複製到 globals.css。</p></div>
       <pre><code>{cssSnippet}</code></pre>
-      <button type="button" onClick={() => copyText(JSON.stringify({ id: selectedId, src: asset.src, rotation, ...calibration }, null, 2), "設定 JSON 已複製")}>複製 JSON</button>
+      <div className="dev-output-actions">
+        <button type="button" onClick={() => copyText(JSON.stringify({ id: selectedId, src: asset.src, rotation, ...calibration }, null, 2), "目前家具 JSON 已複製")}>複製目前家具</button>
+        <button type="button" onClick={() => copyText(JSON.stringify(calibrations, null, 2), "全部校準 JSON 已複製")}>複製全部校準</button>
+      </div>
     </section>
     {toast && <div className="dev-toast" role="status">{toast}</div>}
   </main>;
