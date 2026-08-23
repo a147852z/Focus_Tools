@@ -1,100 +1,111 @@
-# vinext-starter
+# 專注房間（網頁試用版）
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+這是「專注計時＋任務日曆＋房間布置」App 的網頁版本。目前可以直接在電腦瀏覽器中試用，不需要先包裝成 Android App。
 
-## Prerequisites
+> 正式網頁專案位於 `E:\App_design\focus-room-app`。工作區外層的 `focus-room-core-wireframes.html` 是早期介面原型，不是目前的完整版本。
 
-- Node.js `>=22.13.0`
+## 啟動 Server
 
-## Quick Start
+### 1. 開啟終端機
 
-```bash
+在 VS Code 上方選單按：
+
+`Terminal（終端機）` → `New Terminal（新增終端機）`
+
+### 2. 進入專案資料夾
+
+在 PowerShell 輸入：
+
+```powershell
+cd E:\App_design\focus-room-app
+```
+
+### 3. 第一次使用時安裝套件
+
+```powershell
 npm install
+```
+
+已經安裝過套件的話，可以跳過這一步。
+
+### 4. 啟動開發 Server
+
+```powershell
 npm run dev
-npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
+## 家具圖片校準台
 
-## Included Shape
+啟動開發伺服器後，開啟：
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+<http://localhost:3000/developer>
 
-## Workspace Auth Headers
+此頁面可以即時調整家具圖片的桌面／手機寬度、落地錨點、占地格數、格線位置與左右翻轉。校準結果可以儲存在瀏覽器，並複製成 CSS 或 JSON。
 
-Signed-in visitors receive both `oai-authenticated-user-id` and `oai-authenticated-user-email`. Private Sites require every visitor to sign in; public Sites may also have anonymous visitors, for whom neither header is present.
+看到終端機顯示本機網址後，用瀏覽器開啟：
 
-The user ID is stable for the same user on the same Site and different across Sites. Email and name are intended for display or contact purposes.
+<http://localhost:3000/>
 
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
+終端機需要保持開啟。修改程式後，網頁通常會自動更新；沒有更新時可重新整理瀏覽器。
 
-Treat the full name as optional and fall back to email when it is absent:
+## 停止 Server
 
-```tsx
-import { headers } from "next/headers";
+回到正在執行 Server 的終端機，按：
 
-export default async function Home() {
-  const requestHeaders = await headers();
-  const userId = requestHeaders.get("oai-authenticated-user-id");
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
+```text
+Ctrl + C
+```
 
-  const displayName = fullName ?? email;
-  // ...
+如果終端機詢問是否終止工作，輸入 `Y` 後按 Enter。
+
+## 如果出現「找不到 npm」
+
+專案需要 Node.js 22.13.0 以上版本。若電腦已安裝 Node.js，請關閉並重新開啟 VS Code，再試一次 `npm run dev`。
+
+如果你是使用 Codex 內附的 Node.js，可以在 PowerShell 使用：
+
+```powershell
+$npm = Get-ChildItem "$env:LOCALAPPDATA\OpenAI\Codex\runtimes" -Filter npm.cmd -Recurse |
+  Select-Object -First 1
+
+if (-not $npm) {
+  throw "找不到 npm，請先安裝 Node.js 22.13.0 以上版本。"
 }
+
+& $npm.FullName install
+& $npm.FullName run dev
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+## 如果 3000 Port 已被占用
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+先查看是哪個程式正在使用 Port 3000：
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+```powershell
+Get-NetTCPConnection -LocalPort 3000 -State Listen |
+  Select-Object LocalAddress, LocalPort, OwningProcess
+```
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+確認該程序是先前啟動、已不需要的專案 Server 後，再停止它：
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+```powershell
+$connection = Get-NetTCPConnection -LocalPort 3000 -State Listen
+Stop-Process -Id $connection.OwningProcess
+```
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+接著重新執行：
 
-## Useful Commands
+```powershell
+npm run dev
+```
 
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+## 常用指令
 
-## Learn More
+| 指令 | 用途 |
+| --- | --- |
+| `npm run dev` | 啟動本機開發 Server |
+| `npm run build` | 檢查正式版能否成功建置 |
+| `npm test` | 執行專案測試 |
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+## 資料儲存說明
+
+目前任務、家具與遊戲進度主要儲存在瀏覽器的本機資料中。同一個瀏覽器再次開啟時通常會保留，但清除網站資料、使用無痕模式或更換瀏覽器後，資料可能不會保留。

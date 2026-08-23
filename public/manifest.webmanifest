@@ -4,10 +4,15 @@
   "description": "完成任務、累積專注，打造自己的療癒房間。",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#eef3ef",
-  "theme_color": "#246e62",
+  "background_color": "#20140e",
+  "theme_color": "#6a3d1d",
   "lang": "zh-Hant",
   "orientation": "portrait",
+  "categories": ["productivity", "lifestyle", "games"],
+  "shortcuts": [
+    { "name": "開始專注", "short_name": "專注", "url": "/?screen=focus" },
+    { "name": "查看任務", "short_name": "任務", "url": "/?screen=today" }
+  ],
   "icons": [
     { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
   ]
