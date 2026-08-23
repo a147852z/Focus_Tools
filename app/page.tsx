@@ -22,6 +22,14 @@ const furnitureCatalog: FurnitureDefinition[] = [
   { id: "rug", name: "青綠地毯", src: "/assets/furniture/rug-grid-v3.png", className: "rug", price: 300, footprintX: 2, footprintY: 2 },
   { id: "bookshelf", name: "橡木書櫃", src: "/assets/furniture/bookshelf-grid-v3.png", className: "bookshelf", price: 460, footprintX: 2, footprintY: 1 },
   { id: "cabinet", name: "收納櫃", src: "/assets/furniture/cabinet-grid-v3.png", className: "cabinet", price: 420, footprintX: 2, footprintY: 1 },
+  { id: "sofa", name: "青綠雙人沙發", src: "/assets/furniture/sofa-game.png", className: "sofa", price: 680, footprintX: 2, footprintY: 2 },
+  { id: "coffeeTable", name: "花茶矮桌", src: "/assets/furniture/coffee-table-game.png", className: "coffee-table", price: 430, footprintX: 2, footprintY: 1 },
+  { id: "wardrobe", name: "青綠橡木衣櫃", src: "/assets/furniture/wardrobe-game.png", className: "wardrobe", price: 760, footprintX: 2, footprintY: 1 },
+  { id: "daybed", name: "森林單人床", src: "/assets/furniture/daybed-game.png", className: "daybed", price: 560, footprintX: 2, footprintY: 3 },
+  { id: "diningTable", name: "圓形餐桌", src: "/assets/furniture/dining-table-game.png", className: "dining-table", price: 520, footprintX: 2, footprintY: 2 },
+  { id: "stool", name: "青綠軟凳", src: "/assets/furniture/stool-game.png", className: "stool", price: 190, footprintX: 1, footprintY: 1 },
+  { id: "floorLamp", name: "青綠落地燈", src: "/assets/furniture/floor-lamp-game.png", className: "floor-lamp", price: 320, footprintX: 1, footprintY: 1 },
+  { id: "lowBookcase", name: "矮書架", src: "/assets/furniture/low-bookcase-game.png", className: "low-bookcase", price: 490, footprintX: 2, footprintY: 1 },
 ];
 
 function furnitureFootprint(furnitureId: FurnitureId, rotation: number, calibrations: FurnitureCalibrationMap = {}) {
@@ -57,10 +65,12 @@ function normalizePlacedFurniture(items: PlacedFurniture[], roomSize: number, ca
   return normalized;
 }
 
-const initialInventory: Inventory = { bed: 0, desk: 0, chair: 2, lamp: 1, plant: 0, rug: 0, bookshelf: 1, cabinet: 0 };
+const initialInventory: Inventory = { bed: 0, desk: 0, chair: 2, lamp: 1, plant: 0, rug: 0, bookshelf: 1, cabinet: 0, sofa: 0, coffeeTable: 0, wardrobe: 0, daybed: 0, diningTable: 0, stool: 0, floorLamp: 0, lowBookcase: 0 };
 const defaultFurniturePositions: Record<FurnitureId, { gridX: number; gridY: number }> = {
   bed: { gridX: 0, gridY: 3 }, desk: { gridX: 3, gridY: 1 }, chair: { gridX: 3, gridY: 3 }, lamp: { gridX: 5, gridY: 3 },
   plant: { gridX: 5, gridY: 5 }, rug: { gridX: 3, gridY: 4 }, bookshelf: { gridX: 4, gridY: 0 }, cabinet: { gridX: 0, gridY: 0 },
+  sofa: { gridX: 2, gridY: 2 }, coffeeTable: { gridX: 3, gridY: 4 }, wardrobe: { gridX: 4, gridY: 0 }, daybed: { gridX: 0, gridY: 3 },
+  diningTable: { gridX: 2, gridY: 3 }, stool: { gridX: 4, gridY: 4 }, floorLamp: { gridX: 5, gridY: 2 }, lowBookcase: { gridX: 1, gridY: 0 },
 };
 const initialPlacedFurniture: PlacedFurniture[] = [
   { uid: "placed-bed", furnitureId: "bed", rotation: 0, ...defaultFurniturePositions.bed },

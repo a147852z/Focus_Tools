@@ -40,6 +40,14 @@ const assets: FurnitureAsset[] = [
   { id: "rug", name: "地毯", src: "/assets/furniture/rug-grid-v3.png", width: 110, mobileWidth: 93, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 2, footprintY: 2 },
   { id: "bookshelf", name: "書櫃", src: "/assets/furniture/bookshelf-grid-v3.png", width: 84, mobileWidth: 71, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 2, footprintY: 1 },
   { id: "cabinet", name: "矮櫃", src: "/assets/furniture/cabinet-grid-v3.png", width: 84, mobileWidth: 71, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 2, footprintY: 1 },
+  { id: "sofa", name: "青綠雙人沙發", src: "/assets/furniture/sofa-game.png", width: 120, mobileWidth: 104, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 2, footprintY: 2 },
+  { id: "coffeeTable", name: "花茶矮桌", src: "/assets/furniture/coffee-table-game.png", width: 125, mobileWidth: 106, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 2, footprintY: 1 },
+  { id: "wardrobe", name: "青綠橡木衣櫃", src: "/assets/furniture/wardrobe-game.png", width: 90, mobileWidth: 76, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 2, footprintY: 1 },
+  { id: "daybed", name: "森林單人床", src: "/assets/furniture/daybed-game.png", width: 135, mobileWidth: 115, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 2, footprintY: 3 },
+  { id: "diningTable", name: "圓形餐桌", src: "/assets/furniture/dining-table-game.png", width: 110, mobileWidth: 94, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 2, footprintY: 2 },
+  { id: "stool", name: "青綠軟凳", src: "/assets/furniture/stool-game.png", width: 56, mobileWidth: 48, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 1, footprintY: 1 },
+  { id: "floorLamp", name: "青綠落地燈", src: "/assets/furniture/floor-lamp-game.png", width: 55, mobileWidth: 47, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 1, footprintY: 1 },
+  { id: "lowBookcase", name: "矮書架", src: "/assets/furniture/low-bookcase-game.png", width: 120, mobileWidth: 102, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 2, footprintY: 1 },
 ];
 
 function NumericControl({ label, value, min, max, step = 1, unit, onChange }: { label: string; value: number; min: number; max: number; step?: number; unit?: string; onChange: (value: number) => void }) {
