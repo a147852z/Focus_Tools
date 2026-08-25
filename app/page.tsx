@@ -111,7 +111,7 @@ const navItems: { id: Screen; icon: string; label: string }[] = [
 export default function Home() {
   const [screen, setScreen] = useState<Screen>("today");
   const [tasks, setTasks] = useState<Task[]>(starterTasks);
-  const [coins, setCoins] = useState(1240);
+  const [coins, setCoins] = useState(0);
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [visibleMonth, setVisibleMonth] = useState(todayKey.slice(0, 7));
   const [dialogOpen, setDialogOpen] = useState(false);

@@ -15,7 +15,7 @@ type BackupData = {
 };
 type CloudBackup = { version: number; updatedAt: string; data: BackupData };
 
-export default function CloudDataManager({ displayName, email }: { displayName: string; email: string }) {
+export default function CloudDataManager({ displayName, email, isAdmin }: { displayName: string; email: string; isAdmin: boolean }) {
   const [backup, setBackup] = useState<CloudBackup | null | undefined>(undefined);
   const [message, setMessage] = useState("");
 
@@ -61,7 +61,7 @@ export default function CloudDataManager({ displayName, email }: { displayName: 
   const furnitureCount = Object.values(backup?.data.inventory ?? {}).reduce((sum, count) => sum + (Number(count) || 0), 0) + (backup?.data.placedFurniture?.length ?? 0);
 
   return <main className="cloud-page">
-    <header className="cloud-header"><div><span className="eyebrow">FOCUS ROOM CLOUD</span><h1>我的雲端資料</h1><p>{displayName} · {email}</p></div><a href="/?screen=me">返回專注房間</a></header>
+    <header className="cloud-header"><div><span className="eyebrow">FOCUS ROOM CLOUD</span><h1>我的雲端資料</h1><p>{displayName} · {email}</p></div><nav><a href="/?screen=me">返回專注房間</a>{isAdmin && <a href="/cloud-admin">管理使用者點數</a>}</nav></header>
     {backup === undefined ? <section className="cloud-panel"><p>正在讀取你的雲端備份…</p></section> : backup ? <>
       <section className="cloud-panel cloud-overview"><div><span>最後上傳</span><strong>{new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short" }).format(new Date(backup.updatedAt))}</strong></div><div><span>任務</span><strong>{completedTasks} / {tasks.length} 完成</strong></div><div><span>專注紀錄</span><strong>{history.length} 次 · {totalFocus} 分鐘</strong></div><div><span>資產</span><strong>{Number(backup.data.coins ?? 0).toLocaleString("zh-TW")} 金幣</strong></div><div><span>閱讀</span><strong>{Number(backup.data.readingMinutes ?? 0)} 分鐘</strong></div><div><span>房間</span><strong>{backup.data.roomSize ?? 6}×{backup.data.roomSize ?? 6} · {furnitureCount} 件家具</strong></div></section>
       <section className="cloud-panel"><div className="cloud-panel-heading"><div><span>BACKUP CONTENT</span><h2>雲端任務資料</h2></div><strong>{tasks.length} 筆</strong></div>{tasks.length ? <div className="cloud-task-list">{tasks.map((task, index) => <article key={task.id ?? index}><div><strong>{task.title || "未命名任務"}</strong><small>{task.date || "無日期"} · {task.category || "未分類"}</small></div><span>{task.minutes ?? 0} 分鐘</span><b>{task.done ? "已完成" : "未完成"}</b></article>)}</div> : <p className="cloud-empty">備份中沒有任務。</p>}</section>
