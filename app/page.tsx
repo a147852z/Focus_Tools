@@ -12,6 +12,7 @@ type TimerMode = "countdown" | "stopwatch";
 type FocusRecord = { id: number; taskTitle: string; category?: string; minutes: number; coins: number; readingBonus?: number; completedAt: string };
 type InstallPrompt = Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> };
 type FurnitureCalibrationMap = Partial<Record<FurnitureId, FurnitureCalibration>>;
+type CloudStatus = { state: "idle" | "working" | "saved" | "downloaded" | "error"; message: string };
 
 const furnitureCatalog: FurnitureDefinition[] = [
   { id: "bed", name: "橡木床", src: "/assets/furniture/bed-grid-v6.png", className: "bed", price: 520, footprintX: 2, footprintY: 3 },
@@ -134,6 +135,7 @@ export default function Home() {
   const [selectedFurnitureUid, setSelectedFurnitureUid] = useState<string | null>("placed-bed");
   const [shopOpen, setShopOpen] = useState(false);
   const [toast, setToast] = useState("");
+  const [cloudStatus, setCloudStatus] = useState<CloudStatus>({ state: "idle", message: "手動同步，不會自動上傳" });
   const [installPrompt, setInstallPrompt] = useState<InstallPrompt | null>(null);
   const hydrated = useRef(false);
   const timerAnchor = useRef<{ startedAt: number; startSeconds: number } | null>(null);
@@ -398,6 +400,48 @@ export default function Home() {
     URL.revokeObjectURL(url); notify("備份檔已下載");
   }
 
+  function currentBackup() {
+    return { version: 1, exportedAt: new Date().toISOString(), data: { tasks, coins, roomSize, roomZoom, inventory, placedFurniture, focusHistory, readingMinutes } };
+  }
+
+  function requireCloudSignIn() {
+    window.location.href = "/signin-with-chatgpt?return_to=%2F%3Fscreen%3Dme";
+  }
+
+  async function uploadCloudBackup() {
+    setCloudStatus({ state: "working", message: "正在上傳目前資料…" });
+    try {
+      const response = await fetch("/api/cloud-backup", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(currentBackup()) });
+      if (response.status === 401) return requireCloudSignIn();
+      const result = await response.json() as { error?: string; updatedAt?: string };
+      if (!response.ok) throw new Error(result.error || "上傳失敗");
+      setCloudStatus({ state: "saved", message: `已上傳雲端 · ${new Intl.DateTimeFormat("zh-TW", { dateStyle: "short", timeStyle: "short" }).format(new Date(result.updatedAt || Date.now()))}` });
+      notify("目前資料已手動上傳至雲端");
+    } catch (error) {
+      setCloudStatus({ state: "error", message: error instanceof Error ? error.message : "上傳失敗" });
+    }
+  }
+
+  async function downloadCloudBackup() {
+    setCloudStatus({ state: "working", message: "正在讀取雲端備份…" });
+    try {
+      const response = await fetch("/api/cloud-backup");
+      if (response.status === 401) return requireCloudSignIn();
+      const result = await response.json() as { error?: string; backup?: { version: number; updatedAt: string; data: Record<string, unknown> } | null };
+      if (!response.ok) throw new Error(result.error || "下載失敗");
+      if (!result.backup) throw new Error("雲端目前沒有備份");
+      if (!window.confirm("要用雲端備份覆蓋這台裝置目前的資料嗎？建議先下載本機備份。")) {
+        setCloudStatus({ state: "idle", message: "已取消下載" });
+        return;
+      }
+      localStorage.setItem("focus-room-state", JSON.stringify(result.backup.data));
+      setCloudStatus({ state: "downloaded", message: "已下載雲端備份，正在重新載入…" });
+      window.location.reload();
+    } catch (error) {
+      setCloudStatus({ state: "error", message: error instanceof Error ? error.message : "下載失敗" });
+    }
+  }
+
   async function importBackup(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -439,7 +483,7 @@ export default function Home() {
       {screen === "calendar" && <CalendarScreen tasks={tasks} selectedDate={selectedDate} visibleMonth={visibleMonth} onMonthChange={setVisibleMonth} onSelect={setSelectedDate} onAdd={() => openAddTask()} onStart={startFocus} onEdit={openEditTask} />}
       {screen === "focus" && <FocusScreen task={focusTask} readingMinutes={readingMinutes} mode={timerMode} seconds={timerMode === "countdown" ? secondsLeft : elapsedSeconds} running={timerRunning} settled={focusSettled} onModeChange={changeTimerMode} onToggle={toggleFocusTimer} onReset={resetFocusTimer} onFinish={settleFocus} />}
       {screen === "room" && <RoomScreen size={roomSize} zoom={roomZoom} inventory={inventory} placed={placedFurniture} calibrations={furnitureCalibrations} selectedUid={selectedFurnitureUid} onSelect={setSelectedFurnitureUid} onPlace={placeFurniture} onMove={moveFurniture} onRotate={rotateFurniture} onZoomChange={setRoomZoom} onStore={storeFurniture} onExpand={expandRoom} onShop={() => setShopOpen(true)} />}
-      {screen === "me" && <ProfileScreen tasks={tasks} coins={coins} readingMinutes={readingMinutes} roomSize={roomSize} inventory={inventory} placed={placedFurniture} focusHistory={focusHistory} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} onInstall={installApp} />}
+      {screen === "me" && <ProfileScreen tasks={tasks} coins={coins} readingMinutes={readingMinutes} roomSize={roomSize} inventory={inventory} placed={placedFurniture} focusHistory={focusHistory} cloudStatus={cloudStatus} onCloudUpload={uploadCloudBackup} onCloudDownload={downloadCloudBackup} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} onInstall={installApp} />}
 
       <nav className="bottom-nav" aria-label="主要導覽">
         {navItems.map((item) => <button type="button" key={item.id} className={screen === item.id ? "is-active" : ""} onClick={() => setScreen(item.id)}><span>{item.icon}</span>{item.label}</button>)}
@@ -543,7 +587,7 @@ function ShopDialog({ coins, inventory, onBuy, onClose }: { coins:number; invent
   return <div className="modal-backdrop shop-backdrop" role="presentation" onMouseDown={onClose}><section className="shop-dialog" role="dialog" aria-modal="true" aria-labelledby="shop-title" onMouseDown={(event)=>event.stopPropagation()}><div className="dialog-heading"><div><span className="eyebrow">FURNITURE SHOP</span><h2 id="shop-title">森林家具店</h2></div><button type="button" onClick={onClose} aria-label="關閉商店">×</button></div><div className="shop-wallet"><span>目前金幣</span><strong>◆ {coins.toLocaleString("zh-TW")}</strong></div><div className="shop-grid">{furnitureCatalog.map((item)=><article key={item.id}><img src={item.src} alt=""/><div><strong>{item.name}</strong><small>背包已有 {inventory[item.id]}</small></div><button type="button" disabled={coins<item.price} onClick={()=>onBuy(item.id)}>◆ {item.price}</button></article>)}</div></section></div>;
 }
 
-function ProfileScreen({ tasks, coins, readingMinutes, roomSize, inventory, placed, focusHistory, onExport, onImport, onReset, onInstall }: { tasks:Task[]; coins:number; readingMinutes:number; roomSize:number; inventory:Inventory; placed:PlacedFurniture[]; focusHistory:FocusRecord[]; onExport:()=>void; onImport:(event:ChangeEvent<HTMLInputElement>)=>void; onReset:()=>void; onInstall:()=>void }) {
+function ProfileScreen({ tasks, coins, readingMinutes, roomSize, inventory, placed, focusHistory, cloudStatus, onCloudUpload, onCloudDownload, onExport, onImport, onReset, onInstall }: { tasks:Task[]; coins:number; readingMinutes:number; roomSize:number; inventory:Inventory; placed:PlacedFurniture[]; focusHistory:FocusRecord[]; cloudStatus:CloudStatus; onCloudUpload:()=>void; onCloudDownload:()=>void; onExport:()=>void; onImport:(event:ChangeEvent<HTMLInputElement>)=>void; onReset:()=>void; onInstall:()=>void }) {
   const done=tasks.filter((task)=>task.done).length;
   const totalFocus=focusHistory.reduce((sum,record)=>sum+record.minutes,0);
   const readingRewards=Math.floor(readingMinutes/60)*100;
@@ -563,5 +607,5 @@ function ProfileScreen({ tasks, coins, readingMinutes, roomSize, inventory, plac
     {icon:"◆",name:"收藏新手",description:"擁有 5 件家具",value:furnitureCount,target:5},
     {icon:"◇",name:"空間設計師",description:"將房間擴建至 7 × 7",value:roomSize,target:7},
   ];
-  return <section className="screen profile-screen"><div className="profile-card"><div className="avatar">森</div><div><span>角色等級 {level}</span><h2>{level>=5?"專注工匠":level>=3?"專注旅人":"森林新手"}</h2><div className="level-track"><span style={{width:`${levelProgress/250*100}%`}} /></div><small>{levelProgress} / 250 經驗 · 總經驗 {experience}</small></div></div><div className="stats-grid"><article><span>專注</span><strong>Lv. {focusLevel}</strong><small>累積 {totalFocus} 分鐘</small></article><article><span>執行</span><strong>Lv. {executionLevel}</strong><small>完成 {done} 項任務</small></article><article><span>穩定</span><strong>{streak} 天</strong><small>目前連續紀錄</small></article><article><span>創意</span><strong>{roomSize}×{roomSize}</strong><small>收藏 {furnitureCount} 件家具</small></article></div><div className="reading-summary"><div><span>▤ 閱讀獎勵</span><strong>已獲得 {readingRewards} 點</strong></div><div className="reading-progress" role="progressbar" aria-label="閱讀獎勵進度" aria-valuemin={0} aria-valuemax={60} aria-valuenow={readingProgress}><span style={{width:`${readingProgress/60*100}%`}} /></div><small>累計閱讀 {readingMinutes} 分鐘 · 下一個 100 點還差 {60-readingProgress} 分鐘</small></div><div className="section-heading"><h2>成就進度</h2><span>{achievements.filter((achievement)=>achievement.value>=achievement.target).length} / {achievements.length}</span></div><div className="achievement-list">{achievements.map((achievement)=><article key={achievement.name} className={achievement.value>=achievement.target?"is-unlocked":""}><span>{achievement.icon}</span><div><strong>{achievement.name}</strong><small>{achievement.description}</small></div><b>{achievement.value>=achievement.target?"已獲得":`${Math.min(achievement.value,achievement.target)} / ${achievement.target}`}</b></article>)}</div><div className="section-heading history-heading"><h2>最近專注</h2><span>共 {focusHistory.length} 次</span></div>{focusHistory.length?<div className="focus-history">{focusHistory.slice(0,5).map((record)=><article key={record.id}><div><strong>{record.taskTitle}</strong><small>{record.category?`${record.category} · `:""}{new Intl.DateTimeFormat("zh-TW",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}).format(new Date(record.completedAt))}{record.readingBonus?` · 閱讀獎勵 +${record.readingBonus} 點`:""}</small></div><span>{record.minutes} 分鐘</span><b>＋{record.coins} ◆</b></article>)}</div>:<div className="empty-state compact"><span>◷</span><strong>還沒有專注紀錄</strong><p>完成至少一分鐘的專注後，紀錄會顯示在這裡。</p></div>}<div className="wallet-row"><span>目前資產</span><strong>{coins.toLocaleString("zh-TW")} 金幣</strong></div><div className="section-heading data-heading"><h2>資料管理</h2><span>僅儲存在這台裝置</span></div><div className="data-actions"><button type="button" onClick={onExport}>下載備份</button><label>匯入備份<input type="file" accept="application/json,.json" onChange={onImport}/></label><button className="reset-data" type="button" onClick={onReset}>清除全部資料</button></div><button className="install-button" type="button" onClick={onInstall}>安裝到 Android 主畫面</button><p className="install-help">使用 Android Chrome 開啟後，可像一般 App 一樣加入主畫面。</p></section>;
+  return <section className="screen profile-screen"><div className="profile-card"><div className="avatar">森</div><div><span>角色等級 {level}</span><h2>{level>=5?"專注工匠":level>=3?"專注旅人":"森林新手"}</h2><div className="level-track"><span style={{width:`${levelProgress/250*100}%`}} /></div><small>{levelProgress} / 250 經驗 · 總經驗 {experience}</small></div></div><div className="stats-grid"><article><span>專注</span><strong>Lv. {focusLevel}</strong><small>累積 {totalFocus} 分鐘</small></article><article><span>執行</span><strong>Lv. {executionLevel}</strong><small>完成 {done} 項任務</small></article><article><span>穩定</span><strong>{streak} 天</strong><small>目前連續紀錄</small></article><article><span>創意</span><strong>{roomSize}×{roomSize}</strong><small>收藏 {furnitureCount} 件家具</small></article></div><div className="reading-summary"><div><span>▤ 閱讀獎勵</span><strong>已獲得 {readingRewards} 點</strong></div><div className="reading-progress" role="progressbar" aria-label="閱讀獎勵進度" aria-valuemin={0} aria-valuemax={60} aria-valuenow={readingProgress}><span style={{width:`${readingProgress/60*100}%`}} /></div><small>累計閱讀 {readingMinutes} 分鐘 · 下一個 100 點還差 {60-readingProgress} 分鐘</small></div><div className="section-heading"><h2>成就進度</h2><span>{achievements.filter((achievement)=>achievement.value>=achievement.target).length} / {achievements.length}</span></div><div className="achievement-list">{achievements.map((achievement)=><article key={achievement.name} className={achievement.value>=achievement.target?"is-unlocked":""}><span>{achievement.icon}</span><div><strong>{achievement.name}</strong><small>{achievement.description}</small></div><b>{achievement.value>=achievement.target?"已獲得":`${Math.min(achievement.value,achievement.target)} / ${achievement.target}`}</b></article>)}</div><div className="section-heading history-heading"><h2>最近專注</h2><span>共 {focusHistory.length} 次</span></div>{focusHistory.length?<div className="focus-history">{focusHistory.slice(0,5).map((record)=><article key={record.id}><div><strong>{record.taskTitle}</strong><small>{record.category?`${record.category} · `:""}{new Intl.DateTimeFormat("zh-TW",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit"}).format(new Date(record.completedAt))}{record.readingBonus?` · 閱讀獎勵 +${record.readingBonus} 點`:""}</small></div><span>{record.minutes} 分鐘</span><b>＋{record.coins} ◆</b></article>)}</div>:<div className="empty-state compact"><span>◷</span><strong>還沒有專注紀錄</strong><p>完成至少一分鐘的專注後，紀錄會顯示在這裡。</p></div>}<div className="wallet-row"><span>目前資產</span><strong>{coins.toLocaleString("zh-TW")} 金幣</strong></div><div className="section-heading data-heading"><h2>雲端資料</h2><span>由你手動上傳與下載</span></div><div className="cloud-card"><p className={`cloud-status is-${cloudStatus.state}`}>{cloudStatus.message}</p><div className="cloud-actions"><button type="button" disabled={cloudStatus.state==="working"} onClick={onCloudUpload}>上傳目前資料</button><button type="button" disabled={cloudStatus.state==="working"} onClick={onCloudDownload}>下載至此裝置</button></div><a className="cloud-manage-link" href="/cloud-data">查看與清除我的雲端資料</a><small>只有登入同一個 ChatGPT 帳號才能存取；雲端資料不會自動覆蓋本機。</small></div><div className="section-heading data-heading"><h2>本機備份</h2><span>JSON 檔案</span></div><div className="data-actions"><button type="button" onClick={onExport}>下載備份</button><label>匯入備份<input type="file" accept="application/json,.json" onChange={onImport}/></label><button className="reset-data" type="button" onClick={onReset}>清除這台裝置</button></div><button className="install-button" type="button" onClick={onInstall}>安裝到 Android 主畫面</button><p className="install-help">使用 Android Chrome 開啟後，可像一般 App 一樣加入主畫面。</p></section>;
 }
