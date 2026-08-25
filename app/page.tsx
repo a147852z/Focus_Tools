@@ -4,7 +4,7 @@ import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "re
 import { defaultFurnitureCalibrations, furnitureCalibrationEvent, furnitureCalibrationStorageKey, mergeFurnitureCalibrations, type FurnitureCalibration, type FurnitureId } from "./furniture-calibration";
 
 type Screen = "today" | "calendar" | "focus" | "room" | "me";
-type Task = { id: number; title: string; date: string; minutes: number; category: string; done: boolean };
+type Task = { id: number; title: string; date: string; minutes: number; rewardPoints: number; category: string; done: boolean };
 type FurnitureDefinition = { id: FurnitureId; name: string; src: string; className: string; price: number; footprintX: number; footprintY: number };
 type Inventory = Record<FurnitureId, number>;
 type PlacedFurniture = { uid: string; furnitureId: FurnitureId; rotation: number; gridX: number; gridY: number };
@@ -95,12 +95,14 @@ function shiftedDateKey(days: number) {
 
 const todayKey = dateKey(new Date());
 const starterTasks: Task[] = [
-  { id: 1, title: "整理今日課堂筆記", date: todayKey, minutes: 25, category: "學習", done: true },
-  { id: 2, title: "完成英文作業", date: todayKey, minutes: 45, category: "學習", done: false },
-  { id: 3, title: "閱讀第三章", date: todayKey, minutes: 25, category: "閱讀", done: false },
-  { id: 4, title: "整理書桌", date: todayKey, minutes: 15, category: "生活", done: false },
-  { id: 5, title: "複習單字", date: shiftedDateKey(2), minutes: 20, category: "學習", done: false },
+  { id: 1, title: "整理今日課堂筆記", date: todayKey, minutes: 25, rewardPoints: 10, category: "學習", done: true },
+  { id: 2, title: "完成英文作業", date: todayKey, minutes: 45, rewardPoints: 10, category: "學習", done: false },
+  { id: 3, title: "閱讀第三章", date: todayKey, minutes: 25, rewardPoints: 10, category: "閱讀", done: false },
+  { id: 4, title: "整理書桌", date: todayKey, minutes: 15, rewardPoints: 10, category: "生活", done: false },
+  { id: 5, title: "複習單字", date: shiftedDateKey(2), minutes: 20, rewardPoints: 10, category: "學習", done: false },
 ];
+
+const presetFocusMinutes = [15, 20, 25, 45, 60];
 
 const screenNames: Record<Screen, string> = { today: "今天", calendar: "日曆", focus: "專注計時", room: "我的房間", me: "我的" };
 const navItems: { id: Screen; icon: string; label: string }[] = [
@@ -118,6 +120,8 @@ export default function Home() {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newMinutes, setNewMinutes] = useState(25);
+  const [minutesPreset, setMinutesPreset] = useState("25");
+  const [newRewardPoints, setNewRewardPoints] = useState(10);
   const [newCategory, setNewCategory] = useState("一般");
   const [focusTask, setFocusTask] = useState<Task>(starterTasks[1]);
   const [secondsLeft, setSecondsLeft] = useState(starterTasks[1].minutes * 60);
@@ -154,7 +158,7 @@ export default function Home() {
       try {
         const data = JSON.parse(saved) as { tasks?: Task[]; coins?: number; roomSize?: number; roomZoom?: number; inventory?: Inventory; placedFurniture?: PlacedFurniture[]; focusHistory?: FocusRecord[]; readingMinutes?: number };
         const savedRoomSize = typeof data.roomSize === "number" ? Math.max(6, Math.min(8, data.roomSize)) : 6;
-        if (data.tasks) setTasks(data.tasks);
+        if (data.tasks) setTasks(data.tasks.map((task) => ({ ...task, rewardPoints: typeof task.rewardPoints === "number" && Number.isFinite(task.rewardPoints) ? Math.max(0, Math.floor(task.rewardPoints)) : 10 })));
         if (typeof data.coins === "number") setCoins(data.coins);
         if (typeof data.roomSize === "number") setRoomSize(savedRoomSize);
         if (typeof data.roomZoom === "number") setRoomZoom(Math.max(.7, Math.min(1.35, data.roomZoom)));
@@ -234,8 +238,9 @@ export default function Home() {
   function toggleTask(id: number) {
     setTasks((current) => current.map((task) => {
       if (task.id !== id) return task;
-      setCoins((value) => Math.max(0, value + (task.done ? -10 : 10)));
-      notify(task.done ? "已取消完成" : "任務完成，獲得 10 金幣");
+      const reward = Math.max(0, Math.floor(task.rewardPoints ?? 10));
+      setCoins((value) => Math.max(0, value + (task.done ? -reward : reward)));
+      notify(task.done ? `已取消完成，扣回 ${reward} 點` : `任務完成，獲得 ${reward} 點`);
       return { ...task, done: !task.done };
     }));
   }
@@ -259,26 +264,33 @@ export default function Home() {
     timerAnchor.current = null; setTimerRunning(false); setTimerMode(mode); setSecondsLeft(focusTask.minutes * 60); setElapsedSeconds(0); setFocusSettled(false);
   }
 
+  function changeFocusDuration(minutes: number) {
+    const safeMinutes = Math.max(1, Math.min(480, Math.floor(minutes)));
+    timerAnchor.current = null; setTimerRunning(false); setFocusTask((current) => ({ ...current, minutes: safeMinutes })); setSecondsLeft(safeMinutes * 60); setElapsedSeconds(0); setFocusSettled(false);
+  }
+
   function openAddTask(date = selectedDate) {
-    setEditingTask(null); setSelectedDate(date); setNewTitle(""); setNewMinutes(25); setNewCategory("一般"); setDialogOpen(true);
+    setEditingTask(null); setSelectedDate(date); setNewTitle(""); setNewMinutes(25); setMinutesPreset("25"); setNewRewardPoints(10); setNewCategory("一般"); setDialogOpen(true);
   }
 
   function openEditTask(task: Task) {
-    setEditingTask(task); setSelectedDate(task.date); setNewTitle(task.title); setNewMinutes(task.minutes); setNewCategory(task.category); setDialogOpen(true);
+    setEditingTask(task); setSelectedDate(task.date); setNewTitle(task.title); setNewMinutes(task.minutes); setMinutesPreset(presetFocusMinutes.includes(task.minutes) ? String(task.minutes) : "custom"); setNewRewardPoints(Math.max(0, Math.floor(task.rewardPoints ?? 10))); setNewCategory(task.category); setDialogOpen(true);
   }
 
   function addTask(event: FormEvent) {
     event.preventDefault();
     if (!newTitle.trim()) return;
+    const safeMinutes = Number.isFinite(newMinutes) ? Math.max(1, Math.min(480, Math.floor(newMinutes))) : 25;
+    const safeRewardPoints = Number.isFinite(newRewardPoints) ? Math.max(0, Math.min(999999, Math.floor(newRewardPoints))) : 0;
     if (editingTask) {
-      setTasks((current) => current.map((task) => task.id === editingTask.id ? { ...task, title: newTitle.trim(), date: selectedDate, minutes: newMinutes, category: newCategory } : task));
+      setTasks((current) => current.map((task) => task.id === editingTask.id ? { ...task, title: newTitle.trim(), date: selectedDate, minutes: safeMinutes, rewardPoints: safeRewardPoints, category: newCategory } : task));
       notify("任務已更新");
     } else {
-      setTasks((current) => [...current, { id: Date.now(), title: newTitle.trim(), date: selectedDate, minutes: newMinutes, category: newCategory, done: false }]);
+      setTasks((current) => [...current, { id: Date.now(), title: newTitle.trim(), date: selectedDate, minutes: safeMinutes, rewardPoints: safeRewardPoints, category: newCategory, done: false }]);
       notify("任務已加入日曆");
     }
     setVisibleMonth(selectedDate.slice(0, 7));
-    setNewTitle(""); setNewMinutes(25); setNewCategory("一般"); setEditingTask(null); setDialogOpen(false);
+    setNewTitle(""); setNewMinutes(25); setMinutesPreset("25"); setNewRewardPoints(10); setNewCategory("一般"); setEditingTask(null); setDialogOpen(false);
   }
 
   function deleteTask() {
@@ -454,7 +466,7 @@ export default function Home() {
       const validIds = new Set(furnitureCatalog.map((item) => item.id));
       const restoredRoomSize = Math.max(6, Math.min(8, Math.floor(data.roomSize)));
       const restoredRoomZoom = typeof data.roomZoom === "number" ? Math.max(.7, Math.min(1.35, data.roomZoom)) : 1;
-      const restoredTasks = (data.tasks as Task[]).filter((task) => typeof task.id === "number" && typeof task.title === "string" && typeof task.date === "string" && typeof task.minutes === "number").map((task) => ({ ...task, minutes: Math.max(1, Math.min(480, task.minutes)), category: typeof task.category === "string" ? task.category : "一般", done: Boolean(task.done) }));
+      const restoredTasks = (data.tasks as Task[]).filter((task) => typeof task.id === "number" && typeof task.title === "string" && typeof task.date === "string" && typeof task.minutes === "number").map((task) => ({ ...task, minutes: Math.max(1, Math.min(480, task.minutes)), rewardPoints: typeof task.rewardPoints === "number" && Number.isFinite(task.rewardPoints) ? Math.max(0, Math.min(999999, Math.floor(task.rewardPoints))) : 10, category: typeof task.category === "string" ? task.category : "一般", done: Boolean(task.done) }));
       const restoredInventory = { ...initialInventory };
       if (data.inventory && typeof data.inventory === "object") furnitureCatalog.forEach((item) => { const count = (data.inventory as Partial<Inventory>)[item.id]; if (typeof count === "number") restoredInventory[item.id] = Math.max(0, Math.floor(count)); });
       const restoredPlacedRaw = Array.isArray(data.placedFurniture) ? (data.placedFurniture as PlacedFurniture[]).filter((item) => typeof item.uid === "string" && validIds.has(item.furnitureId)).map((item) => ({ ...item, rotation: [0,90,180,270].includes(item.rotation) ? item.rotation : 0, gridX: Math.max(0, Math.min(restoredRoomSize-1, Number(item.gridX)||0)), gridY: Math.max(0, Math.min(restoredRoomSize-1, Number(item.gridY)||0)) })) : initialPlacedFurniture;
@@ -481,7 +493,7 @@ export default function Home() {
 
       {screen === "today" && <TodayScreen tasks={todayTasks} completed={completed} progress={progress} onToggle={toggleTask} onStart={startFocus} onEdit={openEditTask} onAdd={() => openAddTask(todayKey)} />}
       {screen === "calendar" && <CalendarScreen tasks={tasks} selectedDate={selectedDate} visibleMonth={visibleMonth} onMonthChange={setVisibleMonth} onSelect={setSelectedDate} onAdd={() => openAddTask()} onStart={startFocus} onEdit={openEditTask} />}
-      {screen === "focus" && <FocusScreen task={focusTask} readingMinutes={readingMinutes} mode={timerMode} seconds={timerMode === "countdown" ? secondsLeft : elapsedSeconds} running={timerRunning} settled={focusSettled} onModeChange={changeTimerMode} onToggle={toggleFocusTimer} onReset={resetFocusTimer} onFinish={settleFocus} />}
+      {screen === "focus" && <FocusScreen task={focusTask} readingMinutes={readingMinutes} mode={timerMode} seconds={timerMode === "countdown" ? secondsLeft : elapsedSeconds} running={timerRunning} settled={focusSettled} onDurationChange={changeFocusDuration} onModeChange={changeTimerMode} onToggle={toggleFocusTimer} onReset={resetFocusTimer} onFinish={settleFocus} />}
       {screen === "room" && <RoomScreen size={roomSize} zoom={roomZoom} inventory={inventory} placed={placedFurniture} calibrations={furnitureCalibrations} selectedUid={selectedFurnitureUid} onSelect={setSelectedFurnitureUid} onPlace={placeFurniture} onMove={moveFurniture} onRotate={rotateFurniture} onZoomChange={setRoomZoom} onStore={storeFurniture} onExpand={expandRoom} onShop={() => setShopOpen(true)} />}
       {screen === "me" && <ProfileScreen tasks={tasks} coins={coins} readingMinutes={readingMinutes} roomSize={roomSize} inventory={inventory} placed={placedFurniture} focusHistory={focusHistory} cloudStatus={cloudStatus} onCloudUpload={uploadCloudBackup} onCloudDownload={downloadCloudBackup} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} onInstall={installApp} />}
 
@@ -489,7 +501,7 @@ export default function Home() {
         {navItems.map((item) => <button type="button" key={item.id} className={screen === item.id ? "is-active" : ""} onClick={() => setScreen(item.id)}><span>{item.icon}</span>{item.label}</button>)}
       </nav>
 
-      {dialogOpen && <div className="modal-backdrop" role="presentation" onMouseDown={() => setDialogOpen(false)}><form className="task-dialog" onSubmit={addTask} onMouseDown={(event) => event.stopPropagation()}><div className="dialog-heading"><div><span className="eyebrow">{editingTask ? "EDIT TASK" : "NEW TASK"}</span><h2>{editingTask ? "編輯任務" : "新增任務"}</h2></div><button type="button" onClick={() => setDialogOpen(false)} aria-label="關閉">×</button></div><label>任務名稱<input autoFocus value={newTitle} onChange={(event) => setNewTitle(event.target.value)} placeholder="例如：完成報告第一章" /></label><label>日期<input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} /></label><label>分類<select value={newCategory} onChange={(event) => setNewCategory(event.target.value)}><option>一般</option><option>學習</option><option>工作</option><option>閱讀</option><option>生活</option><option>運動</option></select></label><label>預計專注時間<select value={newMinutes} onChange={(event) => setNewMinutes(Number(event.target.value))}><option value={15}>15 分鐘</option><option value={20}>20 分鐘</option><option value={25}>25 分鐘</option><option value={45}>45 分鐘</option><option value={60}>60 分鐘</option></select></label><div className="dialog-actions">{editingTask && <button className="danger-action" type="button" onClick={deleteTask}>刪除任務</button>}<button className="primary-action" type="submit">{editingTask ? "儲存修改" : "儲存任務"}</button></div></form></div>}
+      {dialogOpen && <div className="modal-backdrop" role="presentation" onMouseDown={() => setDialogOpen(false)}><form className="task-dialog" onSubmit={addTask} onMouseDown={(event) => event.stopPropagation()}><div className="dialog-heading"><div><span className="eyebrow">{editingTask ? "EDIT TASK" : "NEW TASK"}</span><h2>{editingTask ? "編輯任務" : "新增任務"}</h2></div><button type="button" onClick={() => setDialogOpen(false)} aria-label="關閉">×</button></div><label>任務名稱<input autoFocus value={newTitle} onChange={(event) => setNewTitle(event.target.value)} placeholder="例如：完成報告第一章" /></label><label>日期<input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} /></label><label>分類<select value={newCategory} onChange={(event) => setNewCategory(event.target.value)}><option>一般</option><option>學習</option><option>工作</option><option>閱讀</option><option>生活</option><option>運動</option></select></label><label>預計專注時間<select value={minutesPreset} onChange={(event) => { const value=event.target.value; setMinutesPreset(value); if(value!=="custom") setNewMinutes(Number(value)); }}><option value="15">15 分鐘</option><option value="20">20 分鐘</option><option value="25">25 分鐘</option><option value="45">45 分鐘</option><option value="60">60 分鐘</option><option value="custom">自訂</option></select></label>{minutesPreset==="custom" && <label>自訂分鐘數<input type="number" min="1" max="480" step="1" inputMode="numeric" value={newMinutes} onChange={(event)=>setNewMinutes(Number(event.target.value))} /></label>}<label>完成任務獎勵點數<input type="number" min="0" max="999999" step="1" inputMode="numeric" value={newRewardPoints} onChange={(event)=>setNewRewardPoints(Number(event.target.value))} /></label><div className="dialog-actions">{editingTask && <button className="danger-action" type="button" onClick={deleteTask}>刪除任務</button>}<button className="primary-action" type="submit">{editingTask ? "儲存修改" : "儲存任務"}</button></div></form></div>}
       {shopOpen && <ShopDialog coins={coins} inventory={inventory} onBuy={buyFurniture} onClose={() => setShopOpen(false)} />}
       <div className={`toast ${toast ? "is-visible" : ""}`} role="status" aria-live="polite">{toast}</div>
     </main>
@@ -500,7 +512,7 @@ function TodayScreen({ tasks, completed, progress, onToggle, onStart, onEdit, on
   const today = new Date(`${todayKey}T12:00:00`);
   const dateLabel = new Intl.DateTimeFormat("zh-TW", { month: "long", day: "numeric" }).format(today);
   const weekdayLabel = new Intl.DateTimeFormat("zh-TW", { weekday: "long" }).format(today);
-  return <section className="screen today-screen"><div className="date-row"><div><strong>{dateLabel}</strong><span>{weekdayLabel}</span></div><button type="button" onClick={onAdd} aria-label="新增任務">＋</button></div><div className="progress-copy"><span><strong>{completed} / {tasks.length}</strong> 今日完成</span><span>{progress}%</span></div><div className="progress-track" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${progress}%` }} /></div><div className="section-heading"><h2>接下來</h2><button type="button" onClick={onAdd}>新增任務</button></div><div className="task-list">{tasks.map((task) => <article className={`task-row ${task.done ? "is-done" : ""}`} key={task.id}><button className="task-check" type="button" onClick={() => onToggle(task.id)} aria-label={`${task.done ? "取消完成" : "完成"}${task.title}`}>{task.done ? "✓" : ""}</button><div><strong>{task.title}</strong><span>{task.category} · {task.minutes} 分鐘</span></div><div className="task-actions">{task.done ? <span className="reward">完成</span> : <button className="start-button" type="button" onClick={() => onStart(task)}>開始</button>}<button className="edit-button" type="button" onClick={() => onEdit(task)} aria-label={`編輯${task.title}`}>編輯</button></div></article>)}</div><aside className="room-hint"><span className="room-mark">◇</span><div><strong>再完成 2 項即可解鎖新地板</strong><p>完成任務，把進度變成房間裡看得見的收藏。</p></div></aside></section>;
+  return <section className="screen today-screen"><div className="date-row"><div><strong>{dateLabel}</strong><span>{weekdayLabel}</span></div><button type="button" onClick={onAdd} aria-label="新增任務">＋</button></div><div className="progress-copy"><span><strong>{completed} / {tasks.length}</strong> 今日完成</span><span>{progress}%</span></div><div className="progress-track" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}><span style={{ width: `${progress}%` }} /></div><div className="section-heading"><h2>接下來</h2><button type="button" onClick={onAdd}>新增任務</button></div><div className="task-list">{tasks.map((task) => <article className={`task-row ${task.done ? "is-done" : ""}`} key={task.id}><button className="task-check" type="button" onClick={() => onToggle(task.id)} aria-label={`${task.done ? "取消完成" : "完成"}${task.title}`}>{task.done ? "✓" : ""}</button><div><strong>{task.title}</strong><span>{task.category} · {task.minutes} 分鐘 · ◆ {task.rewardPoints ?? 10} 點</span></div><div className="task-actions">{task.done ? <span className="reward">完成 ＋{task.rewardPoints ?? 10}</span> : <button className="start-button" type="button" onClick={() => onStart(task)}>開始</button>}<button className="edit-button" type="button" onClick={() => onEdit(task)} aria-label={`編輯${task.title}`}>編輯</button></div></article>)}</div><aside className="room-hint"><span className="room-mark">◇</span><div><strong>再完成 2 項即可解鎖新地板</strong><p>完成任務，把進度變成房間裡看得見的收藏。</p></div></aside></section>;
 }
 
 function CalendarScreen({ tasks, selectedDate, visibleMonth, onMonthChange, onSelect, onAdd, onStart, onEdit }: { tasks: Task[]; selectedDate: string; visibleMonth: string; onMonthChange: (month: string) => void; onSelect: (date: string) => void; onAdd: () => void; onStart: (task: Task) => void; onEdit: (task: Task) => void }) {
@@ -516,16 +528,16 @@ function CalendarScreen({ tasks, selectedDate, visibleMonth, onMonthChange, onSe
     const nextMonth = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}`;
     onMonthChange(nextMonth); onSelect(`${nextMonth}-01`);
   }
-  return <section className="screen"><div className="month-row"><button type="button" aria-label="上個月" onClick={() => changeMonth(-1)}>‹</button><strong>{monthLabel}</strong><button type="button" aria-label="下個月" onClick={() => changeMonth(1)}>›</button></div><div className="weekdays"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div className="calendar-grid">{Array.from({ length: leadingBlanks }, (_, index) => <span className="calendar-blank" key={`blank-${index}`} />)}{days.map((day) => { const key=`${visibleMonth}-${String(day).padStart(2,"0")}`; const hasTask=tasks.some((task)=>task.date===key); return <button type="button" key={key} className={`${selectedDate===key?"is-selected":""} ${key===todayKey?"is-today":""} ${hasTask?"has-task":""}`} onClick={()=>onSelect(key)}>{day}</button>; })}</div><div className="agenda-heading"><div><span>已選日期</span><h2>{selectedLabel}的任務</h2></div><button type="button" onClick={onAdd}>＋ 這天新增</button></div><div className="agenda-list">{selectedTasks.length ? selectedTasks.map((task)=><article key={task.id}><span>{task.minutes} 分</span><div><strong>{task.title}</strong><small>{task.category}</small></div><div className="agenda-actions"><button type="button" onClick={()=>onStart(task)}>開始</button><button type="button" onClick={()=>onEdit(task)}>編輯</button></div></article>) : <div className="empty-state"><span>○</span><strong>這天沒有任務</strong><p>安排一件想完成的事吧。</p></div>}</div></section>;
+  return <section className="screen"><div className="month-row"><button type="button" aria-label="上個月" onClick={() => changeMonth(-1)}>‹</button><strong>{monthLabel}</strong><button type="button" aria-label="下個月" onClick={() => changeMonth(1)}>›</button></div><div className="weekdays"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div><div className="calendar-grid">{Array.from({ length: leadingBlanks }, (_, index) => <span className="calendar-blank" key={`blank-${index}`} />)}{days.map((day) => { const key=`${visibleMonth}-${String(day).padStart(2,"0")}`; const hasTask=tasks.some((task)=>task.date===key); return <button type="button" key={key} className={`${selectedDate===key?"is-selected":""} ${key===todayKey?"is-today":""} ${hasTask?"has-task":""}`} onClick={()=>onSelect(key)}>{day}</button>; })}</div><div className="agenda-heading"><div><span>已選日期</span><h2>{selectedLabel}的任務</h2></div><button type="button" onClick={onAdd}>＋ 這天新增</button></div><div className="agenda-list">{selectedTasks.length ? selectedTasks.map((task)=><article key={task.id}><span>{task.minutes} 分</span><div><strong>{task.title}</strong><small>{task.category} · ◆ {task.rewardPoints ?? 10} 點</small></div><div className="agenda-actions"><button type="button" onClick={()=>onStart(task)}>開始</button><button type="button" onClick={()=>onEdit(task)}>編輯</button></div></article>) : <div className="empty-state"><span>○</span><strong>這天沒有任務</strong><p>安排一件想完成的事吧。</p></div>}</div></section>;
 }
 
-function FocusScreen({ task, readingMinutes, mode, seconds, running, settled, onModeChange, onToggle, onReset, onFinish }: { task: Task; readingMinutes:number; mode:TimerMode; seconds:number; running:boolean; settled:boolean; onModeChange:(mode:TimerMode)=>void; onToggle:()=>void; onReset:()=>void; onFinish:()=>void }) {
+function FocusScreen({ task, readingMinutes, mode, seconds, running, settled, onDurationChange, onModeChange, onToggle, onReset, onFinish }: { task: Task; readingMinutes:number; mode:TimerMode; seconds:number; running:boolean; settled:boolean; onDurationChange:(minutes:number)=>void; onModeChange:(mode:TimerMode)=>void; onToggle:()=>void; onReset:()=>void; onFinish:()=>void }) {
   const total=task.minutes*60; const ratio=mode==="countdown"?Math.max(0,Math.min(1,seconds/total)):Math.max(0,Math.min(1,seconds/total)); const value=`${String(Math.floor(seconds/60)).padStart(2,"0")}:${String(seconds%60).padStart(2,"0")}`;
   const estimatedCoins = mode === "countdown" ? Math.max(0, task.minutes - Math.ceil(seconds / 60)) : Math.floor(seconds / 60);
   const projectedReadingMinutes = readingMinutes + (task.category === "閱讀" ? estimatedCoins : 0);
   const projectedReadingBonus = Math.max(0, Math.floor(projectedReadingMinutes / 60) - Math.floor(readingMinutes / 60)) * 100;
   const minutesUntilReadingReward = 60 - (readingMinutes % 60);
-  return <section className="screen focus-screen"><div className="focus-task"><span>目前任務 · {task.category}</span><strong>{task.title}</strong></div><div className="mode-switch"><button className={mode==="countdown"?"is-selected":""} type="button" onClick={()=>onModeChange("countdown")}>倒數專注</button><button className={mode==="stopwatch"?"is-selected":""} type="button" onClick={()=>onModeChange("stopwatch")}>正向計時</button></div><div className="timer-dial" style={{"--timer-progress":`${ratio*360}deg`} as React.CSSProperties}><div><strong>{value}</strong><span>{settled?"已結算":running?"專注中":mode==="countdown"&&seconds===0?"本次完成":"準備開始"}</span></div></div><div className="timer-actions"><button type="button" onClick={onReset}>重設</button><button className="primary-action" type="button" onClick={onToggle} disabled={settled}>{running?"暫停":settled?"已完成":"開始專注"}</button><button type="button" onClick={onFinish} disabled={settled}>結算</button></div><aside className="focus-tip"><span>✦</span>目前可結算約 <strong>{estimatedCoins} 金幣</strong>；每專注 1 分鐘獲得 1 金幣與經驗。</aside>{task.category === "閱讀" && <aside className="reading-reward-card"><div><span>▤ 閱讀獎勵</span><strong>每累計 60 分鐘 ＋100 點</strong></div><div className="reading-progress" role="progressbar" aria-label="閱讀獎勵進度" aria-valuemin={0} aria-valuemax={60} aria-valuenow={readingMinutes%60}><span style={{width:`${readingMinutes%60/60*100}%`}} /></div><small>已累計 {readingMinutes} 分鐘 · 距下次獎勵還差 {minutesUntilReadingReward} 分鐘{projectedReadingBonus>0?` · 現在結算可額外獲得 ${projectedReadingBonus} 點`:""}</small></aside>}</section>;
+  return <section className="screen focus-screen"><div className="focus-task"><span>目前任務 · {task.category}</span><strong>{task.title}</strong></div><div className="focus-duration-editor"><label>專注時間<input aria-label="專注分鐘數" type="number" min="1" max="480" step="1" inputMode="numeric" value={task.minutes} disabled={running} onChange={(event)=>onDurationChange(Number(event.target.value))}/><span>分鐘</span></label><small>{running?"計時中暫時無法修改":"可直接輸入 1–480 分鐘，本次專注使用"}</small></div><div className="mode-switch"><button className={mode==="countdown"?"is-selected":""} type="button" onClick={()=>onModeChange("countdown")}>倒數專注</button><button className={mode==="stopwatch"?"is-selected":""} type="button" onClick={()=>onModeChange("stopwatch")}>正向計時</button></div><div className="timer-dial" style={{"--timer-progress":`${ratio*360}deg`} as React.CSSProperties}><div><strong>{value}</strong><span>{settled?"已結算":running?"專注中":mode==="countdown"&&seconds===0?"本次完成":"準備開始"}</span></div></div><div className="timer-actions"><button type="button" onClick={onReset}>重設</button><button className="primary-action" type="button" onClick={onToggle} disabled={settled}>{running?"暫停":settled?"已完成":"開始專注"}</button><button type="button" onClick={onFinish} disabled={settled}>結算</button></div><aside className="focus-tip"><span>✦</span>目前可結算約 <strong>{estimatedCoins} 金幣</strong>；每專注 1 分鐘獲得 1 金幣與經驗。</aside>{task.category === "閱讀" && <aside className="reading-reward-card"><div><span>▤ 閱讀獎勵</span><strong>每累計 60 分鐘 ＋100 點</strong></div><div className="reading-progress" role="progressbar" aria-label="閱讀獎勵進度" aria-valuemin={0} aria-valuemax={60} aria-valuenow={readingMinutes%60}><span style={{width:`${readingMinutes%60/60*100}%`}} /></div><small>已累計 {readingMinutes} 分鐘 · 距下次獎勵還差 {minutesUntilReadingReward} 分鐘{projectedReadingBonus>0?` · 現在結算可額外獲得 ${projectedReadingBonus} 點`:""}</small></aside>}</section>;
 }
 
 function RoomScreen({ size, zoom, inventory, placed, calibrations, selectedUid, onSelect, onPlace, onMove, onRotate, onStore, onExpand, onShop, onZoomChange }: { size:number; zoom:number; inventory:Inventory; placed:PlacedFurniture[]; calibrations:Partial<Record<FurnitureId,FurnitureCalibration>>; selectedUid:string|null; onSelect:(uid:string)=>void; onPlace:(id:FurnitureId)=>void; onMove:(uid:string,x:number,y:number)=>void; onRotate:(facing:"left"|"right")=>void; onStore:()=>void; onExpand:()=>void; onShop:()=>void; onZoomChange:(zoom:number)=>void }) {

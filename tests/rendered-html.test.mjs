@@ -52,6 +52,10 @@ test("includes calendar, focus progression, and room persistence", async () => {
   assert.match(page, /function deleteTask\(\)/);
   assert.match(page, /type TimerMode = "countdown" \| "stopwatch"/);
   assert.match(page, /function settleFocus\(\)/);
+  assert.match(page, /rewardPoints/);
+  assert.match(page, /完成任務獎勵點數/);
+  assert.match(page, /自訂分鐘數/);
+  assert.match(page, /function changeFocusDuration\(minutes: number\)/);
   assert.match(page, /focusHistory/);
   assert.match(page, /正向計時/);
   assert.match(page, /function moveFurniture\(uid: string/);
