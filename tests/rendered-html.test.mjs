@@ -55,6 +55,11 @@ test("includes calendar, focus progression, and room persistence", async () => {
   assert.match(page, /type TimerMode = "countdown" \| "stopwatch"/);
   assert.match(page, /function settleFocus\(\)/);
   assert.match(page, /rewardPoints/);
+  assert.match(page, /taskId\?: number/);
+  assert.match(page, /taskId: focusTask\.id/);
+  assert.match(page, /const taskReward = sourceTask && !sourceTask\.done/);
+  assert.match(page, /const focusRecordTitle=/);
+  assert.match(page, /setFocusHistory\(\(current\) => current\.map/);
   assert.match(page, /完成任務獎勵點數/);
   assert.match(page, /自訂分鐘數/);
   assert.match(page, /function changeFocusDuration\(minutes: number\)/);
