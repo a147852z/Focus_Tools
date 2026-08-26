@@ -88,7 +88,7 @@ test("includes calendar, focus progression, and room persistence", async () => {
   assert.match(page, /chair: 0, lamp: 0/);
   assert.match(page, /id: "wallPanel", name: "森林木牆"/);
   assert.match(page, /wallPanel: 0/);
-  assert.match(calibrations, /wallPanel: \{ width: 82, mobileWidth: 70, anchorX: 50\.88, anchorY: 97\.27/);
+  assert.match(calibrations, /wallPanel: \{ width: 53, mobileWidth: 70, anchorX: 50\.33, anchorY: 106\.81, flipOriginX: 50\.88, flipOriginY: 97\.27/);
   assert.match(calibrations, /footprintX: 1, footprintY: 1/);
   assert.match(developerPage, /id: "wallPanel", name: "森林木牆"/);
   assert.ok(wallAsset.byteLength > 1000);
