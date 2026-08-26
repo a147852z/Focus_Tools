@@ -39,11 +39,13 @@ test("server-renders the Focus Room application", async () => {
 });
 
 test("includes calendar, focus progression, and room persistence", async () => {
-  const [page, css, manifest, serviceWorker] = await Promise.all([
+  const [page, css, manifest, serviceWorker, adminRoute, adminPage] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
     readFile(new URL("../public/sw.js", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/admin/cloud-users/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/cloud-admin/cloud-admin-manager.tsx", import.meta.url), "utf8"),
   ]);
 
   assert.match(page, /function dateKey\(date: Date\)/);
@@ -71,6 +73,11 @@ test("includes calendar, focus progression, and room persistence", async () => {
   assert.match(page, /const timerAnchor = useRef/);
   assert.match(page, /Date\.now\(\) - anchor\.startedAt/);
   assert.match(page, /localStorage\.setItem\("focus-room-state"/);
+  assert.match(page, /const initialPlacedFurniture: PlacedFurniture\[\] = \[\]/);
+  assert.match(page, /chair: 0, lamp: 0/);
+  assert.match(adminRoute, /clear_furniture/);
+  assert.match(adminRoute, /data\.placedFurniture = \[\]/);
+  assert.match(adminPage, /清除所有家具/);
   assert.match(css, /\.calendar-grid \.is-today/);
   assert.match(css, /\.danger-action/);
   assert.match(manifest, /"display"\s*:\s*"standalone"/);

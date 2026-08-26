@@ -66,19 +66,14 @@ function normalizePlacedFurniture(items: PlacedFurniture[], roomSize: number, ca
   return normalized;
 }
 
-const initialInventory: Inventory = { bed: 0, desk: 0, chair: 2, lamp: 1, plant: 0, rug: 0, bookshelf: 1, cabinet: 0, sofa: 0, coffeeTable: 0, wardrobe: 0, daybed: 0, diningTable: 0, stool: 0, floorLamp: 0, lowBookcase: 0 };
+const initialInventory: Inventory = { bed: 0, desk: 0, chair: 0, lamp: 0, plant: 0, rug: 0, bookshelf: 0, cabinet: 0, sofa: 0, coffeeTable: 0, wardrobe: 0, daybed: 0, diningTable: 0, stool: 0, floorLamp: 0, lowBookcase: 0 };
 const defaultFurniturePositions: Record<FurnitureId, { gridX: number; gridY: number }> = {
   bed: { gridX: 0, gridY: 3 }, desk: { gridX: 3, gridY: 1 }, chair: { gridX: 3, gridY: 3 }, lamp: { gridX: 5, gridY: 3 },
   plant: { gridX: 5, gridY: 5 }, rug: { gridX: 3, gridY: 4 }, bookshelf: { gridX: 4, gridY: 0 }, cabinet: { gridX: 0, gridY: 0 },
   sofa: { gridX: 2, gridY: 2 }, coffeeTable: { gridX: 3, gridY: 4 }, wardrobe: { gridX: 4, gridY: 0 }, daybed: { gridX: 0, gridY: 3 },
   diningTable: { gridX: 2, gridY: 3 }, stool: { gridX: 4, gridY: 4 }, floorLamp: { gridX: 5, gridY: 2 }, lowBookcase: { gridX: 1, gridY: 0 },
 };
-const initialPlacedFurniture: PlacedFurniture[] = [
-  { uid: "placed-bed", furnitureId: "bed", rotation: 0, ...defaultFurniturePositions.bed },
-  { uid: "placed-desk", furnitureId: "desk", rotation: 0, ...defaultFurniturePositions.desk },
-  { uid: "placed-plant", furnitureId: "plant", rotation: 0, ...defaultFurniturePositions.plant },
-  { uid: "placed-rug", furnitureId: "rug", rotation: 0, ...defaultFurniturePositions.rug },
-];
+const initialPlacedFurniture: PlacedFurniture[] = [];
 
 function dateKey(date: Date) {
   const year = date.getFullYear();
@@ -136,7 +131,7 @@ export default function Home() {
   const [inventory, setInventory] = useState<Inventory>(initialInventory);
   const [placedFurniture, setPlacedFurniture] = useState<PlacedFurniture[]>(initialPlacedFurniture);
   const [furnitureCalibrations, setFurnitureCalibrations] = useState<Partial<Record<FurnitureId, FurnitureCalibration>>>(defaultFurnitureCalibrations);
-  const [selectedFurnitureUid, setSelectedFurnitureUid] = useState<string | null>("placed-bed");
+  const [selectedFurnitureUid, setSelectedFurnitureUid] = useState<string | null>(null);
   const [shopOpen, setShopOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [cloudStatus, setCloudStatus] = useState<CloudStatus>({ state: "idle", message: "手動同步，不會自動上傳" });
@@ -481,7 +476,9 @@ export default function Home() {
 
   function resetAllData() {
     if (!window.confirm("確定要清除所有任務、金幣、家具與專注紀錄嗎？此動作無法復原。")) return;
-    hydrated.current = false; localStorage.removeItem("focus-room-state"); window.location.reload();
+    hydrated.current = false;
+    localStorage.setItem("focus-room-state", JSON.stringify({ tasks: [], coins: 0, roomSize: 6, roomZoom: 1, inventory: initialInventory, placedFurniture: [], focusHistory: [], readingMinutes: 0 }));
+    window.location.reload();
   }
 
   return (
