@@ -60,6 +60,9 @@ test("includes calendar, focus progression, and room persistence", async () => {
   assert.match(page, /const taskReward = sourceTask && !sourceTask\.done/);
   assert.match(page, /const focusRecordTitle=/);
   assert.match(page, /setFocusHistory\(\(current\) => current\.map/);
+  assert.match(page, /<TodayScreen tasks=\{todayTasks\} completed=\{completed\} progress=\{progress\} readingMinutes=\{readingMinutes\}/);
+  assert.match(page, /從今天的閱讀任務開始計時，結算後會累計/);
+  assert.match(page, /task\.category === "閱讀" \? " · 計入閱讀累計"/);
   assert.match(page, /完成任務獎勵點數/);
   assert.match(page, /自訂分鐘數/);
   assert.match(page, /function changeFocusDuration\(minutes: number\)/);
