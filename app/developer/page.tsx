@@ -48,6 +48,7 @@ const assets: FurnitureAsset[] = [
   { id: "stool", name: "青綠軟凳", src: "/assets/furniture/stool-game.png", width: 56, mobileWidth: 48, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 1, footprintY: 1 },
   { id: "floorLamp", name: "青綠落地燈", src: "/assets/furniture/floor-lamp-game.png", width: 55, mobileWidth: 47, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 1, footprintY: 1 },
   { id: "lowBookcase", name: "矮書架", src: "/assets/furniture/low-bookcase-game.png", width: 120, mobileWidth: 102, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 2, footprintY: 1 },
+  { id: "wallPanel", name: "森林木牆", src: "/assets/furniture/wall-panel-game.png", width: 82, mobileWidth: 70, anchorX: 50.88, anchorY: 97.27, flipOriginX: 50.88, flipOriginY: 97.27, footprintX: 1, footprintY: 1 },
 ];
 
 function NumericControl({ label, value, min, max, step = 1, unit, onChange }: { label: string; value: number; min: number; max: number; step?: number; unit?: string; onChange: (value: number) => void }) {

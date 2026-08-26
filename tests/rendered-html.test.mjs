@@ -39,13 +39,16 @@ test("server-renders the Focus Room application", async () => {
 });
 
 test("includes calendar, focus progression, and room persistence", async () => {
-  const [page, css, manifest, serviceWorker, adminRoute, adminPage] = await Promise.all([
+  const [page, css, manifest, serviceWorker, adminRoute, adminPage, calibrations, developerPage, wallAsset] = await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../public/manifest.webmanifest", import.meta.url), "utf8"),
     readFile(new URL("../public/sw.js", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/cloud-users/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/cloud-admin/cloud-admin-manager.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/furniture-calibration.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/developer/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../public/assets/furniture/wall-panel-game.png", import.meta.url)),
   ]);
 
   assert.match(page, /function dateKey\(date: Date\)/);
@@ -83,10 +86,17 @@ test("includes calendar, focus progression, and room persistence", async () => {
   assert.match(page, /localStorage\.setItem\("focus-room-state"/);
   assert.match(page, /const initialPlacedFurniture: PlacedFurniture\[\] = \[\]/);
   assert.match(page, /chair: 0, lamp: 0/);
+  assert.match(page, /id: "wallPanel", name: "森林木牆"/);
+  assert.match(page, /wallPanel: 0/);
+  assert.match(calibrations, /wallPanel: \{ width: 82, mobileWidth: 70, anchorX: 50\.88, anchorY: 97\.27/);
+  assert.match(calibrations, /footprintX: 1, footprintY: 1/);
+  assert.match(developerPage, /id: "wallPanel", name: "森林木牆"/);
+  assert.ok(wallAsset.byteLength > 1000);
   assert.match(adminRoute, /clear_furniture/);
   assert.match(adminRoute, /data\.placedFurniture = \[\]/);
   assert.match(adminPage, /清除所有家具/);
   assert.match(css, /\.calendar-grid \.is-today/);
+  assert.match(css, /\.furniture\{padding:0;line-height:0\}/);
   assert.match(css, /\.danger-action/);
   assert.match(manifest, /"display"\s*:\s*"standalone"/);
   assert.match(manifest, /"shortcuts"/);

@@ -1,7 +1,7 @@
 export const furnitureCalibrationStorageKey = "focus-room-furniture-calibration-v2";
 export const furnitureCalibrationEvent = "focus-room-furniture-calibration-updated";
 
-export type FurnitureId = "bed" | "desk" | "chair" | "lamp" | "plant" | "rug" | "bookshelf" | "cabinet" | "sofa" | "coffeeTable" | "wardrobe" | "daybed" | "diningTable" | "stool" | "floorLamp" | "lowBookcase";
+export type FurnitureId = "bed" | "desk" | "chair" | "lamp" | "plant" | "rug" | "bookshelf" | "cabinet" | "sofa" | "coffeeTable" | "wardrobe" | "daybed" | "diningTable" | "stool" | "floorLamp" | "lowBookcase" | "wallPanel";
 
 export type FurnitureCalibration = {
   width: number;
@@ -36,6 +36,7 @@ export const defaultFurnitureCalibrations: FurnitureCalibrationMap = {
   stool: { width: 42, mobileWidth: 48, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, imageAngle: 0, footprintX: 1, footprintY: 1 },
   floorLamp: { width: 49, mobileWidth: 47, anchorX: 39.05, anchorY: 107.18, flipOriginX: 45.93, flipOriginY: 85.01, imageAngle: 0, footprintX: 1, footprintY: 1 },
   lowBookcase: { width: 108, mobileWidth: 102, anchorX: 66.91, anchorY: 120, flipOriginX: 48.15, flipOriginY: 100, imageAngle: 0, footprintX: 4, footprintY: 3 },
+  wallPanel: { width: 82, mobileWidth: 70, anchorX: 50.88, anchorY: 97.27, flipOriginX: 50.88, flipOriginY: 97.27, imageAngle: 0, footprintX: 1, footprintY: 1 },
 };
 
 export function mergeFurnitureCalibrations(overrides?: Partial<Record<FurnitureId, Partial<FurnitureCalibration>>>): FurnitureCalibrationMap {

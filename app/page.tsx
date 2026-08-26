@@ -31,6 +31,7 @@ const furnitureCatalog: FurnitureDefinition[] = [
   { id: "stool", name: "青綠軟凳", src: "/assets/furniture/stool-game.png", className: "stool", price: 190, footprintX: 1, footprintY: 1 },
   { id: "floorLamp", name: "青綠落地燈", src: "/assets/furniture/floor-lamp-game.png", className: "floor-lamp", price: 320, footprintX: 1, footprintY: 1 },
   { id: "lowBookcase", name: "矮書架", src: "/assets/furniture/low-bookcase-game.png", className: "low-bookcase", price: 490, footprintX: 2, footprintY: 1 },
+  { id: "wallPanel", name: "森林木牆", src: "/assets/furniture/wall-panel-game.png", className: "wall-panel", price: 280, footprintX: 1, footprintY: 1 },
 ];
 
 function furnitureFootprint(furnitureId: FurnitureId, rotation: number, calibrations: FurnitureCalibrationMap = {}) {
@@ -66,12 +67,12 @@ function normalizePlacedFurniture(items: PlacedFurniture[], roomSize: number, ca
   return normalized;
 }
 
-const initialInventory: Inventory = { bed: 0, desk: 0, chair: 0, lamp: 0, plant: 0, rug: 0, bookshelf: 0, cabinet: 0, sofa: 0, coffeeTable: 0, wardrobe: 0, daybed: 0, diningTable: 0, stool: 0, floorLamp: 0, lowBookcase: 0 };
+const initialInventory: Inventory = { bed: 0, desk: 0, chair: 0, lamp: 0, plant: 0, rug: 0, bookshelf: 0, cabinet: 0, sofa: 0, coffeeTable: 0, wardrobe: 0, daybed: 0, diningTable: 0, stool: 0, floorLamp: 0, lowBookcase: 0, wallPanel: 0 };
 const defaultFurniturePositions: Record<FurnitureId, { gridX: number; gridY: number }> = {
   bed: { gridX: 0, gridY: 3 }, desk: { gridX: 3, gridY: 1 }, chair: { gridX: 3, gridY: 3 }, lamp: { gridX: 5, gridY: 3 },
   plant: { gridX: 5, gridY: 5 }, rug: { gridX: 3, gridY: 4 }, bookshelf: { gridX: 4, gridY: 0 }, cabinet: { gridX: 0, gridY: 0 },
   sofa: { gridX: 2, gridY: 2 }, coffeeTable: { gridX: 3, gridY: 4 }, wardrobe: { gridX: 4, gridY: 0 }, daybed: { gridX: 0, gridY: 3 },
-  diningTable: { gridX: 2, gridY: 3 }, stool: { gridX: 4, gridY: 4 }, floorLamp: { gridX: 5, gridY: 2 }, lowBookcase: { gridX: 1, gridY: 0 },
+  diningTable: { gridX: 2, gridY: 3 }, stool: { gridX: 4, gridY: 4 }, floorLamp: { gridX: 5, gridY: 2 }, lowBookcase: { gridX: 1, gridY: 0 }, wallPanel: { gridX: 0, gridY: 0 },
 };
 const initialPlacedFurniture: PlacedFurniture[] = [];
 
