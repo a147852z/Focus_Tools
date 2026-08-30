@@ -492,7 +492,7 @@ export default function Home() {
   return (
     <main className="app-shell">
       <header className="topbar">
-        <div><span className="eyebrow">FOCUS ROOM</span><h1>{screenNames[screen]}</h1></div>
+        <div className="topbar-title"><span className="eyebrow">FOCUS ROOM</span><h1>{screenNames[screen]}</h1></div>
         <div className="coins" aria-label={`${coins} 金幣`}><span>◆</span>{coins.toLocaleString("zh-TW")}</div>
       </header>
 

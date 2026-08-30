@@ -52,6 +52,7 @@ test("includes calendar, focus progression, and room persistence", async () => {
   ]);
 
   assert.match(page, /function dateKey\(date: Date\)/);
+  assert.match(page, /className="topbar-title"/);
   assert.match(page, /function changeMonth\(offset: number\)/);
   assert.match(page, /function openEditTask\(task: Task\)/);
   assert.match(page, /function deleteTask\(\)/);
@@ -100,6 +101,8 @@ test("includes calendar, focus progression, and room persistence", async () => {
   assert.match(adminRoute, /data\.placedFurniture = \[\]/);
   assert.match(adminPage, /清除所有家具/);
   assert.match(css, /\.calendar-grid \.is-today/);
+  assert.match(css, /\.topbar-title\{[^}]*border:3px solid #111[^}]*background:#fff/);
+  assert.match(css, /font-family:"Courier New","Microsoft JhengHei",monospace/);
   assert.match(css, /\.furniture\{padding:0;line-height:0\}/);
   assert.match(css, /\.reading-reward-guide/);
   assert.match(css, /\.danger-action/);
