@@ -64,8 +64,12 @@ test("includes calendar, focus progression, and room persistence", async () => {
   assert.match(page, /const focusRecordTitle=/);
   assert.match(page, /setFocusHistory\(\(current\) => current\.map/);
   assert.match(page, /<TodayScreen tasks=\{todayTasks\} completed=\{completed\} progress=\{progress\} readingMinutes=\{readingMinutes\}/);
-  assert.match(page, /從今天的閱讀任務開始計時，結算後會累計/);
   assert.match(page, /task\.category === "閱讀" \? " · 計入閱讀累計"/);
+  assert.match(page, /function ReadingRewardGuide\(\)/);
+  assert.match(page, /將分類設為「閱讀」/);
+  assert.match(page, /計時結束後按「結算」/);
+  assert.match(page, /只勾選任務完成不會增加閱讀時間/);
+  assert.equal(page.match(/<ReadingRewardGuide \/>/g)?.length, 3);
   assert.match(page, /完成任務獎勵點數/);
   assert.match(page, /自訂分鐘數/);
   assert.match(page, /function changeFocusDuration\(minutes: number\)/);
@@ -97,6 +101,7 @@ test("includes calendar, focus progression, and room persistence", async () => {
   assert.match(adminPage, /清除所有家具/);
   assert.match(css, /\.calendar-grid \.is-today/);
   assert.match(css, /\.furniture\{padding:0;line-height:0\}/);
+  assert.match(css, /\.reading-reward-guide/);
   assert.match(css, /\.danger-action/);
   assert.match(manifest, /"display"\s*:\s*"standalone"/);
   assert.match(manifest, /"shortcuts"/);
