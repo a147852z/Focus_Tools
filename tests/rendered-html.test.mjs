@@ -101,7 +101,9 @@ test("includes calendar, focus progression, and room persistence", async () => {
   assert.match(adminRoute, /data\.placedFurniture = \[\]/);
   assert.match(adminPage, /清除所有家具/);
   assert.match(css, /\.calendar-grid \.is-today/);
-  assert.match(css, /\.topbar-title\{[^}]*border:3px solid #111[^}]*background:#fff/);
+  assert.match(css, /\.topbar-title\{[^}]*color:#fff[^}]*font-family:"Courier New"/);
+  assert.match(css, /\.topbar-title h1\{[^}]*-webkit-text-stroke:2px #111/);
+  assert.doesNotMatch(css, /\.topbar-title\{[^}]*background:#fff/);
   assert.match(css, /font-family:"Courier New","Microsoft JhengHei",monospace/);
   assert.match(css, /\.furniture\{padding:0;line-height:0\}/);
   assert.match(css, /\.reading-reward-guide/);
