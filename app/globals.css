@@ -96,13 +96,13 @@ button,input,select{font-family:inherit}button{touch-action:manipulation}
 /* Cloud administrator controls */
 /* Floor skins decorate existing grid cells only; furniture hit testing and
    occupancy continue to use the unchanged furniture layer above them. */
-.floor-surface.floor-walnut .iso-cell{background-color:#8b5436;background-image:repeating-linear-gradient(30deg,transparent 0 5px,#5c352744 5px 7px,transparent 7px 12px)}
-.floor-surface.floor-walnut .iso-cell.tile-even{background-color:#ac754a;background-image:repeating-linear-gradient(-30deg,transparent 0 5px,#57302055 5px 7px,transparent 7px 12px)}
-.floor-surface.floor-cream .iso-cell{background:#af7958;box-shadow:inset 0 0 0 2px #734a34}
-.floor-surface.floor-cream .iso-cell.tile-even{background:#f4e4be;box-shadow:inset 0 0 0 2px #d3bd93}
-.floor-surface.floor-sage .iso-cell{background:#4f7662;box-shadow:inset 0 0 0 2px #294638}
-.floor-surface.floor-sage .iso-cell.tile-even{background:#7e9c79}
-.floor-surface.floor-sage .iso-cell::before{content:"";position:absolute;inset:28%;background:#e8c77f;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+:is(.floor-surface.floor-walnut .iso-cell,.iso-cell.floor-walnut){background-color:#8b5436;background-image:repeating-linear-gradient(30deg,transparent 0 5px,#5c352744 5px 7px,transparent 7px 12px)}
+:is(.floor-surface.floor-walnut .iso-cell,.iso-cell.floor-walnut).tile-even{background-color:#ac754a;background-image:repeating-linear-gradient(-30deg,transparent 0 5px,#57302055 5px 7px,transparent 7px 12px)}
+:is(.floor-surface.floor-cream .iso-cell,.iso-cell.floor-cream){background:#af7958;box-shadow:inset 0 0 0 2px #734a34}
+:is(.floor-surface.floor-cream .iso-cell,.iso-cell.floor-cream).tile-even{background:#f4e4be;box-shadow:inset 0 0 0 2px #d3bd93}
+:is(.floor-surface.floor-sage .iso-cell,.iso-cell.floor-sage){background:#4f7662;box-shadow:inset 0 0 0 2px #294638}
+:is(.floor-surface.floor-sage .iso-cell,.iso-cell.floor-sage).tile-even{background:#7e9c79}
+:is(.floor-surface.floor-sage .iso-cell,.iso-cell.floor-sage)::before{content:"";position:absolute;inset:28%;background:#e8c77f;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
 .floor-surface .iso-cell.is-occupied::after{content:"";position:absolute;inset:0;background:#ffdc6366;box-shadow:inset 0 0 0 4px #ffe9a1}
 .floor-collection{margin:18px 0 26px;padding:15px;border:3px solid #6e3a1b;background:#f2dba7;box-shadow:3px 3px #a05d29}
 .floor-collection .section-heading{margin:0 0 8px;flex-wrap:wrap;gap:6px}.floor-collection .section-heading span{font-size:12px;color:#67452f}
@@ -147,3 +147,13 @@ button,input,select{font-family:inherit}button{touch-action:manipulation}
 
 /* Cloud furniture administration */
 .admin-user-actions{display:grid;gap:8px}.admin-user-list .admin-clear-furniture{border-color:#69251e;background:#b64c3c;color:#fff1d3;box-shadow:2px 2px #67231d}.admin-user-list button:disabled{cursor:not-allowed;filter:grayscale(.7);opacity:.55}
+.floor-dimensions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+.floor-dimensions label,.floor-collection>label{display:grid;gap:6px;font-size:13px;color:#543420}
+.floor-dimensions input,.floor-collection select{width:100%;min-width:0;padding:10px;border:2px solid #946335;background:#fff1d4;color:#543420}
+.floor-plan{display:grid;gap:4px;margin:12px 0;max-width:420px}
+.floor-plan button{aspect-ratio:1;border:2px solid #84552d;font-size:11px;padding:0;background:#c09259;color:#2d1a0e}
+.floor-plan .plan-walnut{background:#805238;color:#fff}.floor-plan .plan-cream{background:#f4e4be}.floor-plan .plan-sage{background:#4f7662;color:#fff}
+.floor-plan .is-preview{outline:3px solid #e8a313;outline-offset:-3px;box-shadow:inset 0 0 0 5px #fff3b1}
+.floor-apply{padding:12px;border:2px solid #284b32;background:#4d7855;color:#fff3d1;font-weight:800}
+.floor-apply:disabled{opacity:.5;cursor:not-allowed}
+.floor-plan button:focus-visible{outline:3px solid #226c89;outline-offset:2px}
