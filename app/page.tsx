@@ -2,6 +2,7 @@
 
 import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { defaultFurnitureCalibrations, furnitureCalibrationEvent, furnitureCalibrationStorageKey, mergeFurnitureCalibrations, type FurnitureCalibration, type FurnitureId } from "./furniture-calibration";
+import { floorCatalog, initialFloorDecor, normalizeFloorDecor, purchaseFloor, equipFloor, type FloorDecor, type FloorId } from "./floor-decor";
 
 type Screen = "today" | "calendar" | "focus" | "room" | "me";
 type Task = { id: number; title: string; date: string; minutes: number; rewardPoints: number; category: string; done: boolean };
@@ -130,6 +131,7 @@ export default function Home() {
   const [roomSize, setRoomSize] = useState(6);
   const [roomZoom, setRoomZoom] = useState(1);
   const [inventory, setInventory] = useState<Inventory>(initialInventory);
+  const [floorDecor, setFloorDecor] = useState<FloorDecor>(initialFloorDecor);
   const [placedFurniture, setPlacedFurniture] = useState<PlacedFurniture[]>(initialPlacedFurniture);
   const [furnitureCalibrations, setFurnitureCalibrations] = useState<Partial<Record<FurnitureId, FurnitureCalibration>>>(defaultFurnitureCalibrations);
   const [selectedFurnitureUid, setSelectedFurnitureUid] = useState<string | null>(null);
@@ -152,7 +154,8 @@ export default function Home() {
     const saved = localStorage.getItem("focus-room-state");
     if (saved) {
       try {
-        const data = JSON.parse(saved) as { tasks?: Task[]; coins?: number; roomSize?: number; roomZoom?: number; inventory?: Inventory; placedFurniture?: PlacedFurniture[]; focusHistory?: FocusRecord[]; readingMinutes?: number };
+        const data = JSON.parse(saved) as { tasks?: Task[]; coins?: number; roomSize?: number; roomZoom?: number; inventory?: Inventory; placedFurniture?: PlacedFurniture[]; focusHistory?: FocusRecord[]; readingMinutes?: number; floorDecor?: unknown };
+        setFloorDecor(normalizeFloorDecor(data.floorDecor));
         const savedRoomSize = typeof data.roomSize === "number" ? Math.max(6, Math.min(8, data.roomSize)) : 6;
         if (data.tasks) setTasks(data.tasks.map((task) => ({ ...task, rewardPoints: typeof task.rewardPoints === "number" && Number.isFinite(task.rewardPoints) ? Math.max(0, Math.floor(task.rewardPoints)) : 10 })));
         if (typeof data.coins === "number") setCoins(data.coins);
@@ -183,8 +186,8 @@ export default function Home() {
       hydrated.current = true;
       return;
     }
-    localStorage.setItem("focus-room-state", JSON.stringify({ tasks, coins, roomSize, roomZoom, inventory, placedFurniture, focusHistory, readingMinutes }));
-  }, [tasks, coins, roomSize, roomZoom, inventory, placedFurniture, focusHistory, readingMinutes]);
+    localStorage.setItem("focus-room-state", JSON.stringify({ tasks, coins, roomSize, roomZoom, inventory, placedFurniture, focusHistory, readingMinutes, floorDecor }));
+  }, [tasks, coins, roomSize, roomZoom, inventory, placedFurniture, focusHistory, readingMinutes, floorDecor]);
 
   useEffect(() => {
     const loadCalibrations = () => {
@@ -407,7 +410,7 @@ export default function Home() {
   }
 
   function exportBackup() {
-    const backup = { version: 1, exportedAt: new Date().toISOString(), data: { tasks, coins, roomSize, roomZoom, inventory, placedFurniture, focusHistory, readingMinutes } };
+    const backup = currentBackup();
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -416,7 +419,7 @@ export default function Home() {
   }
 
   function currentBackup() {
-    return { version: 1, exportedAt: new Date().toISOString(), data: { tasks, coins, roomSize, roomZoom, inventory, placedFurniture, focusHistory, readingMinutes } };
+    return { version: 1, exportedAt: new Date().toISOString(), data: { tasks, coins, roomSize, roomZoom, inventory, placedFurniture, focusHistory, readingMinutes, floorDecor } };
   }
 
   function requireCloudSignIn() {
@@ -465,7 +468,8 @@ export default function Home() {
       const backup = JSON.parse(await file.text()) as { version?: number; data?: Record<string, unknown> };
       const data = backup.data;
       if (backup.version !== 1 || !data || !Array.isArray(data.tasks) || typeof data.coins !== "number" || typeof data.roomSize !== "number") throw new Error("invalid backup");
-      if (!window.confirm("匯入備份會覆蓋目前的任務、金幣、家具與專注紀錄，確定繼續嗎？")) return;
+      if (!window.confirm("匯入備份會覆蓋目前的任務、金幣、家具、地板收藏與專注紀錄，確定繼續嗎？")) return;
+      const restoredFloorDecor = normalizeFloorDecor(data.floorDecor);
       const validIds = new Set(furnitureCatalog.map((item) => item.id));
       const restoredRoomSize = Math.max(6, Math.min(8, Math.floor(data.roomSize)));
       const restoredRoomZoom = typeof data.roomZoom === "number" ? Math.max(.7, Math.min(1.35, data.roomZoom)) : 1;
@@ -476,17 +480,29 @@ export default function Home() {
       const restoredPlaced = normalizePlacedFurniture(restoredPlacedRaw, restoredRoomSize, furnitureCalibrations);
       const restoredHistory = Array.isArray(data.focusHistory) ? (data.focusHistory as FocusRecord[]).filter((record) => typeof record.id === "number" && typeof record.taskTitle === "string" && typeof record.minutes === "number" && typeof record.completedAt === "string").map((record) => ({ ...record, category: typeof record.category === "string" ? record.category : undefined, readingBonus: typeof record.readingBonus === "number" ? Math.max(0, record.readingBonus) : 0 })).slice(0,100) : [];
       const restoredReadingMinutes = typeof data.readingMinutes === "number" ? Math.max(0, Math.floor(data.readingMinutes)) : restoredHistory.reduce((sum, record) => sum + (record.category === "閱讀" ? record.minutes : 0), 0);
-      setTasks(restoredTasks); setCoins(Math.max(0,Math.floor(data.coins))); setRoomSize(restoredRoomSize); setRoomZoom(restoredRoomZoom); setInventory(restoredInventory); setPlacedFurniture(restoredPlaced); setFocusHistory(restoredHistory); setReadingMinutes(restoredReadingMinutes); setSelectedFurnitureUid(restoredPlaced[0]?.uid ?? null); notify("備份已成功匯入");
+      setTasks(restoredTasks); setCoins(Math.max(0,Math.floor(data.coins))); setRoomSize(restoredRoomSize); setRoomZoom(restoredRoomZoom); setInventory(restoredInventory); setPlacedFurniture(restoredPlaced); setFloorDecor(restoredFloorDecor); setFocusHistory(restoredHistory); setReadingMinutes(restoredReadingMinutes); setSelectedFurnitureUid(restoredPlaced[0]?.uid ?? null); notify("備份已成功匯入");
     } catch {
       notify("無法匯入：這不是有效的專注房間備份檔");
     }
   }
 
   function resetAllData() {
-    if (!window.confirm("確定要清除所有任務、金幣、家具與專注紀錄嗎？此動作無法復原。")) return;
+    if (!window.confirm("確定要清除所有任務、金幣、家具、地板收藏與專注紀錄嗎？此動作無法復原。")) return;
     hydrated.current = false;
-    localStorage.setItem("focus-room-state", JSON.stringify({ tasks: [], coins: 0, roomSize: 6, roomZoom: 1, inventory: initialInventory, placedFurniture: [], focusHistory: [], readingMinutes: 0 }));
+    localStorage.setItem("focus-room-state", JSON.stringify({ tasks: [], coins: 0, roomSize: 6, roomZoom: 1, inventory: initialInventory, placedFurniture: [], focusHistory: [], readingMinutes: 0, floorDecor: initialFloorDecor }));
     window.location.reload();
+  }
+
+  function buyFloor(id: FloorId) {
+    const result = purchaseFloor(coins, floorDecor, id);
+    if (!result.ok) return notify(result.reason === "funds" ? "金幣不足，完成專注來累積獎勵吧！" : "這款地板已經擁有，不需要重複購買");
+    setCoins(result.coins);
+    setFloorDecor(result.decor);
+    notify("地板已購買並鋪設！家具仍可照常擺放");
+  }
+
+  function changeFloor(id: FloorId) {
+    setFloorDecor((current) => equipFloor(current, id));
   }
 
   return (
@@ -499,7 +515,7 @@ export default function Home() {
       {screen === "today" && <TodayScreen tasks={todayTasks} completed={completed} progress={progress} readingMinutes={readingMinutes} onToggle={toggleTask} onStart={startFocus} onEdit={openEditTask} onAdd={() => openAddTask(todayKey)} />}
       {screen === "calendar" && <CalendarScreen tasks={tasks} selectedDate={selectedDate} visibleMonth={visibleMonth} onMonthChange={setVisibleMonth} onSelect={setSelectedDate} onAdd={() => openAddTask()} onStart={startFocus} onEdit={openEditTask} />}
       {screen === "focus" && <FocusScreen task={focusTask} readingMinutes={readingMinutes} mode={timerMode} seconds={timerMode === "countdown" ? secondsLeft : elapsedSeconds} running={timerRunning} settled={focusSettled} onDurationChange={changeFocusDuration} onModeChange={changeTimerMode} onToggle={toggleFocusTimer} onReset={resetFocusTimer} onFinish={settleFocus} />}
-      {screen === "room" && <RoomScreen size={roomSize} zoom={roomZoom} inventory={inventory} placed={placedFurniture} calibrations={furnitureCalibrations} selectedUid={selectedFurnitureUid} onSelect={setSelectedFurnitureUid} onPlace={placeFurniture} onMove={moveFurniture} onRotate={rotateFurniture} onZoomChange={setRoomZoom} onStore={storeFurniture} onExpand={expandRoom} onShop={() => setShopOpen(true)} />}
+      {screen === "room" && <RoomScreen size={roomSize} zoom={roomZoom} inventory={inventory} placed={placedFurniture} floorDecor={floorDecor} onFloorChange={changeFloor} calibrations={furnitureCalibrations} selectedUid={selectedFurnitureUid} onSelect={setSelectedFurnitureUid} onPlace={placeFurniture} onMove={moveFurniture} onRotate={rotateFurniture} onZoomChange={setRoomZoom} onStore={storeFurniture} onExpand={expandRoom} onShop={() => setShopOpen(true)} />}
       {screen === "me" && <ProfileScreen tasks={tasks} coins={coins} readingMinutes={readingMinutes} roomSize={roomSize} inventory={inventory} placed={placedFurniture} focusHistory={focusHistory} cloudStatus={cloudStatus} onCloudUpload={uploadCloudBackup} onCloudDownload={downloadCloudBackup} onExport={exportBackup} onImport={importBackup} onReset={resetAllData} onInstall={installApp} />}
 
       <nav className="bottom-nav" aria-label="主要導覽">
@@ -507,7 +523,7 @@ export default function Home() {
       </nav>
 
       {dialogOpen && <div className="modal-backdrop" role="presentation" onMouseDown={() => setDialogOpen(false)}><form className="task-dialog" onSubmit={addTask} onMouseDown={(event) => event.stopPropagation()}><div className="dialog-heading"><div><span className="eyebrow">{editingTask ? "EDIT TASK" : "NEW TASK"}</span><h2>{editingTask ? "編輯任務" : "新增任務"}</h2></div><button type="button" onClick={() => setDialogOpen(false)} aria-label="關閉">×</button></div><label>任務名稱<input autoFocus value={newTitle} onChange={(event) => setNewTitle(event.target.value)} placeholder="例如：完成報告第一章" /></label><label>日期<input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} /></label><label>分類<select value={newCategory} onChange={(event) => setNewCategory(event.target.value)}><option>一般</option><option>學習</option><option>工作</option><option>閱讀</option><option>生活</option><option>運動</option></select></label><label>預計專注時間<select value={minutesPreset} onChange={(event) => { const value=event.target.value; setMinutesPreset(value); if(value!=="custom") setNewMinutes(Number(value)); }}><option value="15">15 分鐘</option><option value="20">20 分鐘</option><option value="25">25 分鐘</option><option value="45">45 分鐘</option><option value="60">60 分鐘</option><option value="custom">自訂</option></select></label>{minutesPreset==="custom" && <label>自訂分鐘數<input type="number" min="1" max="480" step="1" inputMode="numeric" value={newMinutes} onChange={(event)=>setNewMinutes(Number(event.target.value))} /></label>}<label>完成任務獎勵點數<input type="number" min="0" max="999999" step="1" inputMode="numeric" value={newRewardPoints} onChange={(event)=>setNewRewardPoints(Number(event.target.value))} /></label><div className="dialog-actions">{editingTask && <button className="danger-action" type="button" onClick={deleteTask}>刪除任務</button>}<button className="primary-action" type="submit">{editingTask ? "儲存修改" : "儲存任務"}</button></div></form></div>}
-      {shopOpen && <ShopDialog coins={coins} inventory={inventory} onBuy={buyFurniture} onClose={() => setShopOpen(false)} />}
+      {shopOpen && <ShopDialog coins={coins} inventory={inventory} floorDecor={floorDecor} onBuyFloor={buyFloor} onFloorChange={changeFloor} onBuy={buyFurniture} onClose={() => setShopOpen(false)} />}
       <div className={`toast ${toast ? "is-visible" : ""}`} role="status" aria-live="polite">{toast}</div>
     </main>
   );
@@ -551,7 +567,7 @@ function FocusScreen({ task, readingMinutes, mode, seconds, running, settled, on
   return <section className="screen focus-screen"><div className="focus-task"><span>目前任務 · {task.category}</span><strong>{task.title}</strong></div><div className="focus-duration-editor"><label>專注時間<input aria-label="專注分鐘數" type="number" min="1" max="480" step="1" inputMode="numeric" value={task.minutes} disabled={running} onChange={(event)=>onDurationChange(Number(event.target.value))}/><span>分鐘</span></label><small>{running?"計時中暫時無法修改":"可直接輸入 1–480 分鐘，本次專注使用"}</small></div><div className="mode-switch"><button className={mode==="countdown"?"is-selected":""} type="button" onClick={()=>onModeChange("countdown")}>倒數專注</button><button className={mode==="stopwatch"?"is-selected":""} type="button" onClick={()=>onModeChange("stopwatch")}>正向計時</button></div><div className="timer-dial" style={{"--timer-progress":`${ratio*360}deg`} as React.CSSProperties}><div><strong>{value}</strong><span>{settled?"已結算":running?"專注中":mode==="countdown"&&seconds===0?"本次完成":"準備開始"}</span></div></div><div className="timer-actions"><button type="button" onClick={onReset}>重設</button><button className="primary-action" type="button" onClick={onToggle} disabled={settled}>{running?"暫停":settled?"已完成":"開始專注"}</button><button type="button" onClick={onFinish} disabled={settled}>結算</button></div><aside className="focus-tip"><span>✦</span>目前可結算約 <strong>{estimatedCoins} 金幣</strong>；每專注 1 分鐘獲得 1 金幣與經驗。</aside>{task.category === "閱讀" && <aside className="reading-reward-card"><div><span>▤ 閱讀獎勵</span><strong>每累計 60 分鐘 ＋100 點</strong></div><div className="reading-progress" role="progressbar" aria-label="閱讀獎勵進度" aria-valuemin={0} aria-valuemax={60} aria-valuenow={readingMinutes%60}><span style={{width:`${readingMinutes%60/60*100}%`}} /></div><small>已累計 {readingMinutes} 分鐘 · 距下次獎勵還差 {minutesUntilReadingReward} 分鐘{projectedReadingBonus>0?` · 現在結算可額外獲得 ${projectedReadingBonus} 點`:""}</small><ReadingRewardGuide /></aside>}</section>;
 }
 
-function RoomScreen({ size, zoom, inventory, placed, calibrations, selectedUid, onSelect, onPlace, onMove, onRotate, onStore, onExpand, onShop, onZoomChange }: { size:number; zoom:number; inventory:Inventory; placed:PlacedFurniture[]; calibrations:Partial<Record<FurnitureId,FurnitureCalibration>>; selectedUid:string|null; onSelect:(uid:string)=>void; onPlace:(id:FurnitureId)=>void; onMove:(uid:string,x:number,y:number)=>void; onRotate:(facing:"left"|"right")=>void; onStore:()=>void; onExpand:()=>void; onShop:()=>void; onZoomChange:(zoom:number)=>void }) {
+function RoomScreen({ size, zoom, inventory, placed, floorDecor, onFloorChange, calibrations, selectedUid, onSelect, onPlace, onMove, onRotate, onStore, onExpand, onShop, onZoomChange }: { size:number; zoom:number; inventory:Inventory; placed:PlacedFurniture[]; floorDecor:FloorDecor; onFloorChange:(id:FloorId)=>void; calibrations:Partial<Record<FurnitureId,FurnitureCalibration>>; selectedUid:string|null; onSelect:(uid:string)=>void; onPlace:(id:FurnitureId)=>void; onMove:(uid:string,x:number,y:number)=>void; onRotate:(facing:"left"|"right")=>void; onStore:()=>void; onExpand:()=>void; onShop:()=>void; onZoomChange:(zoom:number)=>void }) {
   const [draggingUid, setDraggingUid] = useState<string | null>(null);
   const dragOffset = useRef<{ x: number; y: number } | null>(null);
   const selectedItem = placed.find((item) => item.uid === selectedUid);
@@ -587,10 +603,10 @@ function RoomScreen({ size, zoom, inventory, placed, calibrations, selectedUid, 
 
   return <section className="screen room-screen">
     <div className="room-toolbar"><div><strong>舒適小窩</strong><span>{size} × {size} 格 · 已擺放 {placed.length} 件</span></div><div className="room-zoom-controls" aria-label="房間縮放"><button type="button" aria-label="縮小房間" onClick={()=>changeZoom(zoom-0.1)}>−</button><input aria-label="房間縮放比例" type="range" min="0.7" max="1.35" step="0.05" value={zoom} onChange={(event)=>changeZoom(Number(event.target.value))}/><button type="button" aria-label="放大房間" onClick={()=>changeZoom(zoom+0.1)}>＋</button><output>{Math.round(zoom*100)}%</output></div><button className="expand-room-button" type="button" onClick={onExpand}>擴建 {size===6?"800":"2,000"} ◆</button></div>
-    <div className={`isometric-room size-${size} ${draggingUid?"is-dragging":""}`} style={{"--room-zoom":zoom} as React.CSSProperties} onPointerMove={moveFromPointer} onPointerUp={stopDragging} onPointerCancel={stopDragging}>
+    <div className={`isometric-room floor-surface floor-${floorDecor.active} size-${size} ${draggingUid?"is-dragging":""}`} style={{"--room-zoom":zoom} as React.CSSProperties} onPointerMove={moveFromPointer} onPointerUp={stopDragging} onPointerCancel={stopDragging}>
       <div className="room-backdrop" aria-hidden="true"/>
       <div className="diamond-floor" aria-hidden="true"/>
-      <div className="room-grid" aria-hidden="true">{cells.map((cell) => <span key={`${cell.x}-${cell.y}`} className={`iso-cell ${isSelectedCell(cell.x,cell.y)?"is-occupied":""}`} style={{ left:`${50+(cell.x-cell.y)*50/size}%`, top:`${(cell.x+cell.y+1)*50/size}%`, width:`${100/size}%`, height:`${100/size}%` }}/>)}</div>
+      <div className="room-grid" aria-hidden="true">{cells.map((cell) => <span key={`${cell.x}-${cell.y}`} className={`iso-cell ${(cell.x+cell.y)%2===0?"tile-even":"tile-odd"} ${isSelectedCell(cell.x,cell.y)?"is-occupied":""}`} style={{ left:`${50+(cell.x-cell.y)*50/size}%`, top:`${(cell.x+cell.y+1)*50/size}%`, width:`${100/size}%`, height:`${100/size}%` }}/>)}</div>
       <div className="furniture-layer">{placed.map((placedItem) => {
         const item = furnitureCatalog.find((entry) => entry.id === placedItem.furnitureId); if (!item) return null;
         const calibration = calibrations[placedItem.furnitureId];
@@ -602,12 +618,30 @@ function RoomScreen({ size, zoom, inventory, placed, calibrations, selectedUid, 
       <span className="drag-hint">按住家具拖曳，亮色格為實際占位</span>
     </div>
     <div className="edit-bar"><span>已選取：<strong>{selectedDefinition?.name ?? "尚未選取"}</strong>{selectedItem && selectedFootprint && <small>起點 {selectedItem.gridX+1}, {selectedItem.gridY+1} · 占 {selectedFootprint.width} × {selectedFootprint.depth} 格</small>}</span><div className="move-controls" aria-label="移動家具"><button type="button" onClick={()=>nudgeSelected(0,-1)}>↑</button><button type="button" onClick={()=>nudgeSelected(-1,0)}>←</button><button type="button" onClick={()=>nudgeSelected(1,0)}>→</button><button type="button" onClick={()=>nudgeSelected(0,1)}>↓</button></div><div><button type="button" onClick={()=>onRotate("left")}>← 朝左</button><button type="button" onClick={()=>onRotate("right")}>朝右 →</button><button type="button" onClick={onStore}>收納</button></div></div>
+    <section className="floor-collection" aria-labelledby="floor-collection-title"><div className="section-heading"><h2 id="floor-collection-title">我的地板</h2><span>目前：{floorCatalog.find((floor)=>floor.id===floorDecor.active)?.name}</span></div><p className="floor-help">整間鋪設，不占格子；上面可照常放置家具。已購買的圖案可免費切換。</p><div className="floor-options">{floorCatalog.filter((floor)=>floor.id==="original"||floorDecor.owned.includes(floor.id)).map((floor)=><button type="button" key={floor.id} aria-pressed={floorDecor.active===floor.id} onClick={()=>onFloorChange(floor.id)}><FloorSwatch id={floor.id}/><strong>{floor.name}</strong><small>{floorDecor.active===floor.id?"使用中":"點擊鋪設"}</small></button>)}</div><button className="floor-shop-link" type="button" onClick={onShop}>購買更多地板圖案 →</button></section>
     <div className="section-heading"><h2>我的背包</h2><button type="button" onClick={onShop}>前往商店</button></div>{backpackItems.length ? <div className="inventory-grid">{backpackItems.map((item)=><button type="button" key={item.id} onClick={()=>onPlace(item.id)}><img src={item.src} alt="" /><small>{item.name} ×{inventory[item.id]}</small><b>點擊擺放</b></button>)}</div> : <div className="empty-state"><span>□</span><strong>背包是空的</strong><p>前往商店購買新的家具吧。</p></div>}
   </section>;
 }
 
-function ShopDialog({ coins, inventory, onBuy, onClose }: { coins:number; inventory:Inventory; onBuy:(id:FurnitureId)=>void; onClose:()=>void }) {
-  return <div className="modal-backdrop shop-backdrop" role="presentation" onMouseDown={onClose}><section className="shop-dialog" role="dialog" aria-modal="true" aria-labelledby="shop-title" onMouseDown={(event)=>event.stopPropagation()}><div className="dialog-heading"><div><span className="eyebrow">FURNITURE SHOP</span><h2 id="shop-title">森林家具店</h2></div><button type="button" onClick={onClose} aria-label="關閉商店">×</button></div><div className="shop-wallet"><span>目前金幣</span><strong>◆ {coins.toLocaleString("zh-TW")}</strong></div><div className="shop-grid">{furnitureCatalog.map((item)=><article key={item.id}><img src={item.src} alt=""/><div><strong>{item.name}</strong><small>背包已有 {inventory[item.id]}</small></div><button type="button" disabled={coins<item.price} onClick={()=>onBuy(item.id)}>◆ {item.price}</button></article>)}</div></section></div>;
+function FloorSwatch({ id }: { id: FloorId }) {
+  return <span className={`floor-swatch floor-surface floor-${id}`} aria-hidden="true">{Array.from({length:16},(_,index)=>{
+    const x=index%4, y=Math.floor(index/4);
+    return <span key={index} className={`iso-cell ${(x+y)%2===0?"tile-even":"tile-odd"}`} style={{left:`${50+(x-y)*12.5}%`,top:`${(x+y+1)*12.5}%`,width:"25%",height:"25%"}}/>;
+  })}</span>;
+}
+
+function ShopDialog({ coins, inventory, floorDecor, onBuyFloor, onFloorChange, onBuy, onClose }: { coins:number; inventory:Inventory; floorDecor:FloorDecor; onBuyFloor:(id:FloorId)=>void; onFloorChange:(id:FloorId)=>void; onBuy:(id:FurnitureId)=>void; onClose:()=>void }) {
+  const [category,setCategory]=useState<"furniture"|"floors">("floors");
+  return <div className="modal-backdrop shop-backdrop" role="presentation" onMouseDown={onClose}><section className="shop-dialog" role="dialog" aria-modal="true" aria-labelledby="shop-title" onMouseDown={(event)=>event.stopPropagation()}>
+    <div className="dialog-heading"><div><span className="eyebrow">FOREST DECOR SHOP</span><h2 id="shop-title">森林家具店</h2></div><button type="button" onClick={onClose} aria-label="關閉商店">×</button></div>
+    <div className="shop-wallet"><span>目前金幣</span><strong>◆ {coins.toLocaleString("zh-TW")}</strong></div>
+    <div className="shop-categories" aria-label="商品分類"><button type="button" aria-pressed={category==="furniture"} onClick={()=>setCategory("furniture")}>家具</button><button type="button" aria-pressed={category==="floors"} onClick={()=>setCategory("floors")}>地板圖案</button></div>
+    {category==="floors" ? <><p className="floor-help">購買一次，永久收藏；購買後立即鋪設整個房間，不影響家具擺放。換装免費，擴建也不用再買。</p><div className="floor-shop-grid">{floorCatalog.map((floor)=>{
+      const owned=floor.id==="original"||floorDecor.owned.includes(floor.id);
+      const active=floorDecor.active===floor.id;
+      return <article key={floor.id}><FloorSwatch id={floor.id}/><strong>{floor.name}</strong><p>{floor.description}</p><small>{owned?"已擁有 · 免費切換":`整間鋪設 · ◆ ${floor.price}`}</small><button type="button" disabled={active||(!owned&&coins<floor.price)} onClick={()=>owned?onFloorChange(floor.id):onBuyFloor(floor.id)}>{active?"使用中":owned?"鋪設地板":coins<floor.price?`還差 ${floor.price-coins} 金幣`:`◆ ${floor.price} 購買並鋪設`}</button></article>;
+    })}</div><p className="floor-help">跨裝置使用：購買後至「我的」手動上傳資料，再於另一台裝置下載。</p></> : <div className="shop-grid">{furnitureCatalog.map((item)=><article key={item.id}><img src={item.src} alt=""/><div><strong>{item.name}</strong><small>背包已有 {inventory[item.id]}</small></div><button type="button" disabled={coins<item.price} onClick={()=>onBuy(item.id)}>◆ {item.price}</button></article>)}</div>}
+  </section></div>;
 }
 
 function ProfileScreen({ tasks, coins, readingMinutes, roomSize, inventory, placed, focusHistory, cloudStatus, onCloudUpload, onCloudDownload, onExport, onImport, onReset, onInstall }: { tasks:Task[]; coins:number; readingMinutes:number; roomSize:number; inventory:Inventory; placed:PlacedFurniture[]; focusHistory:FocusRecord[]; cloudStatus:CloudStatus; onCloudUpload:()=>void; onCloudDownload:()=>void; onExport:()=>void; onImport:(event:ChangeEvent<HTMLInputElement>)=>void; onReset:()=>void; onInstall:()=>void }) {

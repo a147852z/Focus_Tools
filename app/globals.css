@@ -94,6 +94,33 @@ button,input,select{font-family:inherit}button{touch-action:manipulation}
 @media(max-width:520px){.furniture.grid-positioned.has-calibration{width:var(--calibrated-mobile-width)}}
 
 /* Cloud administrator controls */
+/* Floor skins decorate existing grid cells only; furniture hit testing and
+   occupancy continue to use the unchanged furniture layer above them. */
+.floor-surface.floor-walnut .iso-cell{background-color:#8b5436;background-image:repeating-linear-gradient(30deg,transparent 0 5px,#5c352744 5px 7px,transparent 7px 12px)}
+.floor-surface.floor-walnut .iso-cell.tile-even{background-color:#ac754a;background-image:repeating-linear-gradient(-30deg,transparent 0 5px,#57302055 5px 7px,transparent 7px 12px)}
+.floor-surface.floor-cream .iso-cell{background:#af7958;box-shadow:inset 0 0 0 2px #734a34}
+.floor-surface.floor-cream .iso-cell.tile-even{background:#f4e4be;box-shadow:inset 0 0 0 2px #d3bd93}
+.floor-surface.floor-sage .iso-cell{background:#4f7662;box-shadow:inset 0 0 0 2px #294638}
+.floor-surface.floor-sage .iso-cell.tile-even{background:#7e9c79}
+.floor-surface.floor-sage .iso-cell::before{content:"";position:absolute;inset:28%;background:#e8c77f;clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.floor-surface .iso-cell.is-occupied::after{content:"";position:absolute;inset:0;background:#ffdc6366;box-shadow:inset 0 0 0 4px #ffe9a1}
+.floor-collection{margin:18px 0 26px;padding:15px;border:3px solid #6e3a1b;background:#f2dba7;box-shadow:3px 3px #a05d29}
+.floor-collection .section-heading{margin:0 0 8px;flex-wrap:wrap;gap:6px}.floor-collection .section-heading span{font-size:12px;color:#67452f}
+.floor-help{margin:8px 0 14px;color:#725037;font-size:12px;line-height:1.65}
+.floor-options{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:9px}
+.floor-options>button{display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0;padding:12px 6px;border:2px solid #9a6638;background:#f9e9c6;color:#543420}
+.floor-options>button[aria-pressed=true]{border-color:#31573c;box-shadow:inset 0 0 0 2px #67855a;background:#dce2b9}
+.floor-options strong{font-size:12px}.floor-options small{font-size:11px;color:#45613c}
+.floor-swatch{position:relative;display:block;width:100px;height:58px;flex-shrink:0;pointer-events:none;filter:drop-shadow(0 4px 0 #563a29)}
+.floor-shop-link{margin-top:12px;border:0;background:transparent;color:#315b40;font-size:13px;font-weight:800;padding:7px 0;text-decoration:underline}
+.shop-categories{display:flex;gap:8px;margin:14px 0}.shop-categories button{flex:1;border:2px solid #84552d;padding:10px;background:#edcf95;color:#57351f;font-weight:800}.shop-categories button[aria-pressed=true]{background:#41664b;color:#fff1cc;border-color:#26432d}
+.floor-shop-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.floor-shop-grid article{display:flex;flex-direction:column;align-items:center;gap:9px;padding:18px 12px 12px;border:2px solid #946335;background:#f9e9c6;text-align:center;color:#543420}
+.floor-shop-grid .floor-swatch{margin-bottom:8px}.floor-shop-grid p{margin:0;min-height:38px;font-size:12px;line-height:1.5;color:#725037}.floor-shop-grid small{font-size:11px;color:#41664b}
+.floor-shop-grid button{width:100%;margin-top:auto;border:2px solid #284b32;padding:10px 4px;background:#4d7855;color:#fff3d1;font-size:12px;font-weight:800}.floor-shop-grid button:disabled{background:#d0c29d;border-color:#9b8964;color:#635b49;cursor:default}
+.floor-options button:focus-visible,.floor-shop-grid button:focus-visible,.shop-categories button:focus-visible,.floor-shop-link:focus-visible{outline:3px solid #226c89;outline-offset:3px}
+@media(max-width:360px){.floor-shop-grid{gap:8px}.floor-shop-grid article{padding-inline:7px}.floor-shop-grid strong{font-size:13px}}
+
 .cloud-header nav{display:flex;align-items:center;gap:9px}.cloud-header .signout-link{border-color:#69251e;background:#b64c3c;color:#fff1d3;box-shadow:2px 2px #67231d}.admin-user-list{display:grid;gap:10px;margin-top:16px}.admin-user-list article{display:grid;grid-template-columns:minmax(0,1fr) 180px auto;align-items:end;gap:14px;padding:14px;border:2px solid #9a5c2d;background:#f8e4b9}.admin-user-list article>div,.admin-user-list label{display:grid;gap:5px}.admin-user-list small{color:#76543b}.admin-user-list label{color:#76543b;font-size:12px;font-weight:800}.admin-user-list input{width:100%;border:2px solid #9a5c2d;border-radius:3px;padding:9px;background:#fff7df;color:#3a2114}.admin-user-list button{border:2px solid #25442f;border-radius:3px;padding:10px 13px;background:linear-gradient(#5e946d,#356044);box-shadow:2px 2px #1b321f;color:#fff4cf;font-weight:800}@media(max-width:680px){.cloud-header nav{width:100%;align-items:stretch;flex-direction:column}.admin-user-list article{grid-template-columns:1fr}.admin-user-list button{width:100%}}
 
 /* Room zoom keeps the floor, grid hit area and furniture on one shared plane. */
