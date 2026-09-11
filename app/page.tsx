@@ -16,7 +16,7 @@ type CloudStatus = { state: "idle" | "working" | "saved" | "downloaded" | "error
 
 const furnitureCatalog: FurnitureDefinition[] = [
   { id: "bed", name: "橡木床", src: "/assets/furniture/bed-grid-v6.png", className: "bed", price: 520, footprintX: 2, footprintY: 3 },
-  { id: "desk", name: "書桌", src: "/assets/furniture/desk-grid-v3.png", className: "desk", price: 360, footprintX: 2, footprintY: 1 },
+  { id: "desk", name: "書桌", src: "/assets/furniture/desk-grid-v4.png", className: "desk", price: 360, footprintX: 3, footprintY: 1 },
   { id: "chair", name: "木椅", src: "/assets/furniture/chair-grid-v3.png", className: "chair", price: 180, footprintX: 1, footprintY: 1 },
   { id: "lamp", name: "青綠檯燈", src: "/assets/furniture/lamp-grid-v3.png", className: "lamp", price: 240, footprintX: 1, footprintY: 1 },
   { id: "plant", name: "葉片盆栽", src: "/assets/furniture/plant-grid-v3.png", className: "plant", price: 220, footprintX: 1, footprintY: 1 },

@@ -4,6 +4,7 @@ export const furnitureCalibrationEvent = "focus-room-furniture-calibration-updat
 export type FurnitureId = "bed" | "desk" | "chair" | "lamp" | "plant" | "rug" | "bookshelf" | "cabinet" | "sofa" | "coffeeTable" | "wardrobe" | "daybed" | "diningTable" | "stool" | "floorLamp" | "lowBookcase" | "wallPanel";
 
 export type FurnitureCalibration = {
+  assetVersion?: number;
   width: number;
   mobileWidth: number;
   anchorX: number;
@@ -21,7 +22,7 @@ export type FurnitureCalibrationMap = Record<FurnitureId, FurnitureCalibration>;
 // page may still save browser-local overrides while a new preset is tested.
 export const defaultFurnitureCalibrations: FurnitureCalibrationMap = {
   bed: { width: 139, mobileWidth: 119, anchorX: 58.9, anchorY: 92.18, flipOriginX: 50.34, flipOriginY: 47.96, imageAngle: 0, footprintX: 3, footprintY: 2 },
-  desk: { width: 153, mobileWidth: 71, anchorX: 68.51, anchorY: 104.35, flipOriginX: 50, flipOriginY: 100, imageAngle: 0, footprintX: 3, footprintY: 1 },
+  desk: { assetVersion: 4, width: 181, mobileWidth: 154, anchorX: 63.8, anchorY: 90, flipOriginX: 50, flipOriginY: 100, imageAngle: 0, footprintX: 3, footprintY: 1 },
   chair: { width: 92, mobileWidth: 48, anchorX: 52.17, anchorY: 88.79, flipOriginX: 50, flipOriginY: 100, imageAngle: 0, footprintX: 1, footprintY: 1 },
   lamp: { width: 78, mobileWidth: 39, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, imageAngle: 0, footprintX: 1, footprintY: 1 },
   plant: { width: 101, mobileWidth: 46, anchorX: 50.99, anchorY: 95.05, flipOriginX: 50, flipOriginY: 100, imageAngle: 0, footprintX: 1, footprintY: 1 },
@@ -41,6 +42,13 @@ export const defaultFurnitureCalibrations: FurnitureCalibrationMap = {
 
 export function mergeFurnitureCalibrations(overrides?: Partial<Record<FurnitureId, Partial<FurnitureCalibration>>>): FurnitureCalibrationMap {
   return Object.fromEntries(
-    (Object.keys(defaultFurnitureCalibrations) as FurnitureId[]).map((id) => [id, { ...defaultFurnitureCalibrations[id], ...overrides?.[id] }]),
+    (Object.keys(defaultFurnitureCalibrations) as FurnitureId[]).map((id) => {
+      const defaults = defaultFurnitureCalibrations[id];
+      const saved = overrides?.[id];
+      // A replacement sprite has different transparent margins and foot contacts.
+      // Keep other furniture presets, but do not reuse offsets from an older asset.
+      const compatible = defaults.assetVersion === undefined || saved?.assetVersion === defaults.assetVersion;
+      return [id, { ...defaults, ...(compatible ? saved : undefined) }];
+    }),
   ) as FurnitureCalibrationMap;
 }

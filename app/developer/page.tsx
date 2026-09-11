@@ -33,7 +33,7 @@ type DragGesture = {
 
 const assets: FurnitureAsset[] = [
   { id: "bed", name: "橡木床", src: "/assets/furniture/bed-grid-v6.png", width: 188, mobileWidth: 160, anchorX: 57.78, anchorY: 85.73, flipOriginX: 57.78, flipOriginY: 85.73, footprintX: 2, footprintY: 3 },
-  { id: "desk", name: "書桌", src: "/assets/furniture/desk-grid-v3.png", width: 84, mobileWidth: 71, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 2, footprintY: 1 },
+  { id: "desk", name: "書桌", src: "/assets/furniture/desk-grid-v4.png", assetVersion: 4, width: 181, mobileWidth: 154, anchorX: 63.8, anchorY: 90, flipOriginX: 50, flipOriginY: 100, footprintX: 3, footprintY: 1 },
   { id: "chair", name: "椅子", src: "/assets/furniture/chair-grid-v3.png", width: 56, mobileWidth: 48, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 1, footprintY: 1 },
   { id: "lamp", name: "立燈", src: "/assets/furniture/lamp-grid-v3.png", width: 46, mobileWidth: 39, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 1, footprintY: 1 },
   { id: "plant", name: "盆栽", src: "/assets/furniture/plant-grid-v3.png", width: 54, mobileWidth: 46, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 1, footprintY: 1 },
@@ -239,7 +239,7 @@ export default function DeveloperPage() {
             return <span key={`${cell.x}-${cell.y}`} className={occupied ? "is-occupied" : ""} style={{ left: `${50 + (cell.x - cell.y) * 50 / gridSize}%`, top: `${(cell.x + cell.y + 1) * 50 / gridSize}%`, width: `${100 / gridSize}%`, height: `${100 / gridSize}%` }}><i>{cell.x + 1},{cell.y + 1}</i></span>;
           })}</div>
           <div className="dev-furniture-layer">
-            <div className="dev-image-box" style={previewStyle} onPointerDown={(event) => startDrag(event, "move")} onPointerMove={continueDrag} onPointerUp={finishDrag} onPointerCancel={finishDrag}>
+            <div className="dev-image-box" data-furniture-id={selectedId} style={previewStyle} onPointerDown={(event) => startDrag(event, "move")} onPointerMove={continueDrag} onPointerUp={finishDrag} onPointerCancel={finishDrag}>
               <img src={asset.src} alt={asset.name} draggable={false} onLoad={(event) => setNaturalSize({ width: event.currentTarget.naturalWidth, height: event.currentTarget.naturalHeight })} />
               <button type="button" className="dev-rotate-handle" aria-label="拖曳旋轉圖片" title="拖曳旋轉；按住 Shift 吸附 15°" onPointerDown={(event) => startDrag(event, "rotate")} />
               <button type="button" className="dev-resize-handle" aria-label="拖曳調整圖片大小" title="拖曳調整圖片大小" onPointerDown={(event) => startDrag(event, "resize")} />

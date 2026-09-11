@@ -84,6 +84,9 @@ button,input,select{font-family:inherit}button{touch-action:manipulation}
 .dev-image-box .dev-pivot-handle{width:15px;height:15px;border-color:#45205c;border-radius:2px;background:#c879ed;transform:translate(-50%,-50%) rotate(45deg);cursor:move}.dev-stage::after{content:"拖曳圖片移動 · 圓點旋轉 · 方點縮放 · 紫色菱形設定翻轉重心"}.dev-stage-readout{flex-wrap:wrap}
 
 /* Runtime calibration values saved by /developer. */
+/* Desk v4: correct the generated tabletop's roughly 28-degree axes toward
+   the floor's 30-degree projection, keeping the front foot stationary. */
+.furniture.desk img,.dev-image-box[data-furniture-id="desk"] img{transform:matrix(1,-.012,0,1.1,0,0);transform-origin:63.8% 90%}
 .furniture{padding:0;line-height:0}
 .furniture.grid-positioned.has-calibration{width:var(--calibrated-width);transform-origin:var(--calibrated-origin-x) var(--calibrated-origin-y)}
 .furniture.grid-positioned.has-calibration.is-facing-right,.furniture.grid-positioned.has-calibration.is-moving.is-facing-right{transform:translate(var(--calibrated-right-x),var(--calibrated-y)) rotate(var(--calibrated-angle)) scaleX(1)}
