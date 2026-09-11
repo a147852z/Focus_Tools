@@ -5,6 +5,7 @@ export type FurnitureId = "bed" | "desk" | "chair" | "lamp" | "plant" | "rug" | 
 
 export type FurnitureCalibration = {
   assetVersion?: number;
+  rotation?: 0 | 90;
   width: number;
   mobileWidth: number;
   anchorX: number;
@@ -22,7 +23,7 @@ export type FurnitureCalibrationMap = Record<FurnitureId, FurnitureCalibration>;
 // page may still save browser-local overrides while a new preset is tested.
 export const defaultFurnitureCalibrations: FurnitureCalibrationMap = {
   bed: { width: 139, mobileWidth: 119, anchorX: 58.9, anchorY: 92.18, flipOriginX: 50.34, flipOriginY: 47.96, imageAngle: 0, footprintX: 3, footprintY: 2 },
-  desk: { assetVersion: 4, width: 181, mobileWidth: 154, anchorX: 63.8, anchorY: 90, flipOriginX: 50, flipOriginY: 100, imageAngle: 0, footprintX: 3, footprintY: 1 },
+  desk: { rotation: 90, assetVersion: 4, width: 107, mobileWidth: 154, anchorX: 75.55, anchorY: 98.42, flipOriginX: 50, flipOriginY: 100, imageAngle: 0, footprintX: 3, footprintY: 1 },
   chair: { width: 92, mobileWidth: 48, anchorX: 52.17, anchorY: 88.79, flipOriginX: 50, flipOriginY: 100, imageAngle: 0, footprintX: 1, footprintY: 1 },
   lamp: { width: 78, mobileWidth: 39, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, imageAngle: 0, footprintX: 1, footprintY: 1 },
   plant: { width: 101, mobileWidth: 46, anchorX: 50.99, anchorY: 95.05, flipOriginX: 50, flipOriginY: 100, imageAngle: 0, footprintX: 1, footprintY: 1 },

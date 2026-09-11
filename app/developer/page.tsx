@@ -33,7 +33,7 @@ type DragGesture = {
 
 const assets: FurnitureAsset[] = [
   { id: "bed", name: "橡木床", src: "/assets/furniture/bed-grid-v6.png", width: 188, mobileWidth: 160, anchorX: 57.78, anchorY: 85.73, flipOriginX: 57.78, flipOriginY: 85.73, footprintX: 2, footprintY: 3 },
-  { id: "desk", name: "書桌", src: "/assets/furniture/desk-grid-v4.png", assetVersion: 4, width: 181, mobileWidth: 154, anchorX: 63.8, anchorY: 90, flipOriginX: 50, flipOriginY: 100, footprintX: 3, footprintY: 1 },
+  { id: "desk", name: "書桌", src: "/assets/furniture/desk-grid-v4.png", rotation: 90, assetVersion: 4, width: 107, mobileWidth: 154, anchorX: 75.55, anchorY: 98.42, flipOriginX: 50, flipOriginY: 100, footprintX: 3, footprintY: 1 },
   { id: "chair", name: "椅子", src: "/assets/furniture/chair-grid-v3.png", width: 56, mobileWidth: 48, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 1, footprintY: 1 },
   { id: "lamp", name: "立燈", src: "/assets/furniture/lamp-grid-v3.png", width: 46, mobileWidth: 39, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 1, footprintY: 1 },
   { id: "plant", name: "盆栽", src: "/assets/furniture/plant-grid-v3.png", width: 54, mobileWidth: 46, anchorX: 50, anchorY: 100, flipOriginX: 50, flipOriginY: 100, footprintX: 1, footprintY: 1 },
@@ -275,7 +275,7 @@ export default function DeveloperPage() {
       <div><span className="dev-kicker">GENERATED OUTPUT</span><h2>可直接套用的 CSS</h2><p>數值會依目前選取的家具即時更新；確認後複製到 globals.css。</p></div>
       <pre><code>{cssSnippet}</code></pre>
       <div className="dev-output-actions">
-        <button type="button" onClick={() => copyText(JSON.stringify({ id: selectedId, src: asset.src, rotation, ...calibration }, null, 2), "目前家具 JSON 已複製")}>複製目前家具</button>
+        <button type="button" onClick={() => copyText(JSON.stringify({ id: selectedId, src: asset.src, ...calibration, rotation }, null, 2), "目前家具 JSON 已複製")}>複製目前家具</button>
         <button type="button" onClick={() => copyText(JSON.stringify(calibrations, null, 2), "全部校準 JSON 已複製")}>複製全部校準</button>
       </div>
     </section>

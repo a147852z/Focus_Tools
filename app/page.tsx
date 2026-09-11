@@ -331,7 +331,7 @@ export default function Home() {
     if (placedFurniture.some((item) => item.furnitureId === furnitureId)) return notify("試用版同款家具一次只能擺放一件");
     const uid = `${furnitureId}-${Date.now()}`;
     const preferred = defaultFurniturePositions[furnitureId];
-    const preferredCandidate: PlacedFurniture = { uid, furnitureId, rotation: 0, ...preferred };
+    const preferredCandidate: PlacedFurniture = { uid, furnitureId, rotation: furnitureCalibrations[furnitureId]?.rotation ?? 0, ...preferred };
     const openCells = [preferred, ...Array.from({ length: roomSize * roomSize }, (_, index) => ({ gridX: index % roomSize, gridY: Math.floor(index / roomSize) }))];
     const target = openCells.find((cell) => canPlaceFurniture({ ...preferredCandidate, ...cell }, placedFurniture, roomSize, furnitureCalibrations));
     if (!target) return notify("房間沒有足夠的連續空格，請先收納其他家具");
