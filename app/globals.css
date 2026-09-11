@@ -157,3 +157,10 @@ button,input,select{font-family:inherit}button{touch-action:manipulation}
 .floor-apply{padding:12px;border:2px solid #284b32;background:#4d7855;color:#fff3d1;font-weight:800}
 .floor-apply:disabled{opacity:.5;cursor:not-allowed}
 .floor-plan button:focus-visible{outline:3px solid #226c89;outline-offset:2px}
+.floor-editor-toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:36px;cursor:pointer;list-style:none;color:#543420}
+.floor-editor-toggle::-webkit-details-marker{display:none}
+.floor-editor-toggle h2{margin:0;font-size:18px}
+.floor-editor-toggle>span{font-size:12px;white-space:nowrap;color:#315b40;font-weight:800}
+.floor-editor-toggle .floor-collapse-hint,.floor-editor[open] .floor-expand-hint{display:none}
+.floor-editor[open] .floor-collapse-hint{display:inline}
+.floor-editor-toggle:focus-visible{outline:3px solid #226c89;outline-offset:4px}

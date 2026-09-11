@@ -8,8 +8,9 @@ export default function FloorEditor({ decor, size, onLay, onShop }: { decor: Flo
   const keys = floorRectKeys(rect, size);
   const needed = keys.filter((key) => (decor.tiles[key] ?? "original") !== id).length;
   const enough = id === "original" || (decor.stock[id] ?? 0) >= needed;
-  return <section className="floor-collection" aria-labelledby="floor-collection-title">
-    <div className="section-heading"><h2 id="floor-collection-title">局部鋪設地板</h2><button type="button" onClick={onShop}>購買地板</button></div>
+  return <details className="floor-collection floor-editor" aria-labelledby="floor-collection-title">
+    <summary className="floor-editor-toggle"><h2 id="floor-collection-title">局部鋪設地板</h2><span className="floor-expand-hint">展開 ＋</span><span className="floor-collapse-hint">收合 −</span></summary>
+    <button className="floor-shop-link" type="button" onClick={onShop}>購買地板 →</button>
     <p className="floor-help">每片覆蓋 1 格。選擇幾乘幾，再點下方格子選擇左上起點。不同圖案可以混搭，家具照常放在上面。</p>
     <label>圖案<select value={id} onChange={(e)=>setId(e.target.value as FloorId)}>{floorCatalog.map((floor)=><option key={floor.id} value={floor.id}>{floor.name} · {floor.id === "original" ? "免費拆除" : `庫存 ${decor.stock[floor.id] ?? 0} 格`}</option>)}</select></label>
     <div className="floor-dimensions">{(["width", "height"] as const).map((key)=><label key={key}>{key==="width"?"寬（格）":"深（格）"}<input type="number" min="1" max={size} step="1" value={rect[key]} onChange={(e)=>setRect({...rect,[key]:Number(e.target.value)})}/></label>)}</div>
@@ -20,5 +21,5 @@ export default function FloorEditor({ decor, size, onLay, onShop }: { decor: Flo
     <p className="floor-help" role="status">起點：第 {rect.x+1} 欄、第 {rect.y+1} 列 · {rect.width} × {rect.height} 格。{!keys.length?"範圍超出房間或尺寸無效，請調整。":id==="original"?`拆除 ${needed} 格，圖案退回庫存。`:`需用 ${needed} 格，庫存 ${decor.stock[id]??0} 格${enough?"。":"，請先購買。"}`}</p>
     <button className="floor-apply" type="button" disabled={!keys.length||!enough||needed===0} onClick={()=>onLay(id,rect)}>{id==="original"?"拆除選取範圍並收納":"鋪設選取範圍"}</button>
     <p className="floor-help">覆蓋時舊地板退回庫存，相同圖案不重複消耗。擴建的新格子維持原木地板。</p>
-  </section>;
+  </details>;
 }
